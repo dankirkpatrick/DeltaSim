@@ -321,12 +321,14 @@ class ExtrudePath {
 class GCodeLayer {
   ArrayList<ExtrudePath> extrudePaths;
   ArrayList<PShape> shapes;
+  PShape layerShape;
   int currentPath;
   int currentPoint;
   
   GCodeLayer() {
     this.extrudePaths = new ArrayList<ExtrudePath>();
     this.shapes = new ArrayList<PShape>();
+    reset();
   }
   
   void reset() {
@@ -336,12 +338,6 @@ class GCodeLayer {
   
   void addPath(ExtrudePath path) {
     this.extrudePaths.add(path); //<>//
-  }
-  
-  void setExtrudePaths(ArrayList<ExtrudePath> extrudePaths) {
-    this.extrudePaths = extrudePaths;
-    reset();
-    buildShapes();
   }
   
   double getLayerHeight() {
@@ -364,6 +360,7 @@ class GCodeLayer {
   // Builds all the shapes for this layer
   void buildShapes() {
     Location lastPoint = new Location();
+    this.shapes.clear();
     for (ExtrudePath p : this.extrudePaths) {
       if (p.isExtruding) {
         PShape shape = createShape();
@@ -380,6 +377,11 @@ class GCodeLayer {
       } else {
         lastPoint = p.points.get(p.points.size()-1);
       }
+    }
+    
+    this.layerShape = createShape(GROUP);
+    for (PShape s : this.shapes) {
+      this.layerShape.addChild(s);
     }
   }
   
@@ -427,10 +429,12 @@ class GCodeLayer {
   
   // Draws all shapes in this layer
   Location drawLayer() {
-    println("Drawing layer from shapes: " + getLayerHeight());
+    shape(this.layerShape);
+    /*
     for (PShape s : shapes) {
       shape(s);
     }
+    */
     ExtrudePath path = extrudePaths.get(extrudePaths.size()-1);
     return path.points.get(path.points.size()-1);
   }
@@ -446,7 +450,7 @@ class GCode {
     this.filename = null;
     this.layers = new ArrayList<GCodeLayer>();
     this.deltaConfig = deltaConfig;
-    this.currentLayer = 0;
+    reset();
   }
   
   void reset() { 
@@ -454,6 +458,7 @@ class GCode {
   }
 
   void drawGCode() {
+    //this.currentLayer = this.layers.size();
     colorMode(RGB, 256);
     GCodeLayer cLayer = null;
     if (this.currentLayer < this.layers.size()) {
