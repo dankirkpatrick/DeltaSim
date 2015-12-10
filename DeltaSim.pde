@@ -5,8 +5,6 @@ DeltaConfig actual;
 Location testEffectorLocation  = null;
 float zMultiplier;
 GCode gcode;
-int frameCount = 0;
-double layerHeight = 0;
 
 int selectedTower = 0;
 float xAngle = 0;
@@ -54,7 +52,7 @@ void setup() {
   calculateErrors();
 
   gcode = new GCode(actual);
-  gcode.readFile("/Users/dan/Downloads/lowpolyskulllisa.gcode");
+  gcode.readFile("/Users/dan/Downloads/lowpolyskulllisa.gcode"); //<>//
 }
 
 void calculateErrors() {
@@ -103,7 +101,7 @@ void calculateErrors() {
 
 void draw() {
   background(255);
-  actual.drawDelta(heightErrors);
+  actual.drawDelta(heightErrors); //<>//
 }
 
 void mouseWheel(MouseEvent e) {
@@ -320,93 +318,195 @@ class ExtrudePath {
   }
 }
 
+class GCodeLayer {
+  ArrayList<ExtrudePath> extrudePaths;
+  ArrayList<PShape> shapes;
+  int currentPath;
+  int currentPoint;
+  
+  GCodeLayer() {
+    this.extrudePaths = new ArrayList<ExtrudePath>();
+    this.shapes = new ArrayList<PShape>();
+  }
+  
+  void reset() {
+    this.currentPath = 0;
+    this.currentPoint = 0;
+  }
+  
+  void addPath(ExtrudePath path) {
+    this.extrudePaths.add(path); //<>//
+  }
+  
+  void setExtrudePaths(ArrayList<ExtrudePath> extrudePaths) {
+    this.extrudePaths = extrudePaths;
+    reset();
+    buildShapes();
+  }
+  
+  double getLayerHeight() {
+    if (this.extrudePaths.size() == 0) {
+      return 0;
+    } else {
+      return this.extrudePaths.get(this.extrudePaths.size()-1).points.get(0).z;
+    }
+  }
+  
+  boolean nextPoint() {
+    this.currentPoint++;
+    if (this.extrudePaths.get(this.currentPath).points.size() <= this.currentPoint) {
+      this.currentPoint = 0;
+      this.currentPath++;
+    }
+    return !(this.currentPath < this.extrudePaths.size());
+  }
+  
+  // Builds all the shapes for this layer
+  void buildShapes() {
+    Location lastPoint = new Location();
+    for (ExtrudePath p : this.extrudePaths) {
+      if (p.isExtruding) {
+        PShape shape = createShape();
+        shape.beginShape();
+        shape.fill(60);
+        shape.stroke(60);
+        shape.vertex((float)lastPoint.x, (float)lastPoint.y, (float)lastPoint.z);
+        for (Location l : p.points) {
+          shape.vertex((float)l.x, (float)l.y, (float)l.z);
+          lastPoint = l;
+        }
+        shape.endShape();
+        this.shapes.add(shape);
+      } else {
+        lastPoint = p.points.get(p.points.size()-1);
+      }
+    }
+  }
+  
+  // Draws the current path, up to the current point.
+  // Returns the current point in the path.
+  Location drawPath(Location lastPoint) {
+    ExtrudePath path = this.extrudePaths.get(this.currentPath);
+    if (path.isExtruding) {
+      stroke(255);
+    } else if (path.isRetracting) {
+      stroke(50, 200, 50);
+    } else { 
+      // moving: return immediately with current point without drawing  
+      return path.points.get(this.currentPoint);
+    }
+    beginShape();
+    vertex((float)lastPoint.x, (float)lastPoint.y, (float)lastPoint.z);
+    for (int i = 0; i < this.currentPoint; i++) {
+      Location l = path.points.get(i);
+      vertex((float)l.x, (float)l.y, (float)l.z);
+    }
+    endShape();
+    return path.points.get(this.currentPoint);
+  }
+  
+  // Draws this layer up to the current point in the current path.
+  // Returns the last point drawn.
+  Location drawLayer(Location lastPoint) {
+    if (this.currentPath == 0) {
+      lastPoint = drawPath(lastPoint);
+    } else {
+      int shapeId = 0;
+      for (int i = 0; i < this.currentPath; i++) {
+        if (this.extrudePaths.get(i).isExtruding) {
+          PShape s = this.shapes.get(shapeId++);
+          shape(s);
+        }
+      }
+      ExtrudePath path = this.extrudePaths.get(this.currentPath - 1);
+      lastPoint = path.points.get(path.points.size() - 1);
+      lastPoint = drawPath(lastPoint);
+    }
+    return lastPoint;
+  }
+  
+  // Draws all shapes in this layer
+  Location drawLayer() {
+    println("Drawing layer from shapes: " + getLayerHeight());
+    for (PShape s : shapes) {
+      shape(s);
+    }
+    ExtrudePath path = extrudePaths.get(extrudePaths.size()-1);
+    return path.points.get(path.points.size()-1);
+  }
+}
+
 class GCode {
   String filename;
-  ArrayList<ExtrudePath> extrudePaths;
+  ArrayList<GCodeLayer> layers;
   DeltaConfig deltaConfig;
+  int currentLayer;
 
   GCode(DeltaConfig deltaConfig) {
     this.filename = null;
-    this.extrudePaths = new ArrayList<ExtrudePath>();
+    this.layers = new ArrayList<GCodeLayer>();
     this.deltaConfig = deltaConfig;
+    this.currentLayer = 0;
+  }
+  
+  void reset() { 
+    this.currentLayer = 0;
   }
 
   void drawGCode() {
     colorMode(RGB, 256);
-    int currentFrame = 0;
-    Location lastPoint = new Location();
-    for (ExtrudePath e : extrudePaths) {
-      if (e.isExtruding) {
-        beginShape();
-        vertex((float)lastPoint.x, (float)lastPoint.y, (float)lastPoint.z);
-        if (layerHeight == lastPoint.z) {
-          stroke(200);
-          //fill(250, 200, 200);
-          //stroke(250, 200, 200);
+    GCodeLayer cLayer = null;
+    if (this.currentLayer < this.layers.size()) {
+      cLayer = this.layers.get(this.currentLayer);
+      // Tell layer to get next point; returns true if done
+      if (cLayer.nextPoint()) {
+        this.currentLayer++;
+        if (this.currentLayer < this.layers.size()) {
+          cLayer = this.layers.get(this.currentLayer);
         } else {
-          //fill(50, 50, 50, 0.75);
-          stroke((int)(((layerHeight - lastPoint.z) / layerHeight) * 100) + 50);
-          //stroke(50, 50, 50, 0.75);
+          cLayer = null;
         }
-        for (Location p : e.points) {
-          vertex((float)p.x, (float)p.y, (float)p.z);
-          lastPoint = p;
-          currentFrame++;
-          if (currentFrame > frameCount) {
-            break;
-          }
-        }
-        endShape();
-      } else if (e.isRetracting) {
-        if (layerHeight == lastPoint.z) {
-          //fill(0, 250, 0);
-          stroke(0, 200, 0);
-        } else {
-          //fill(0, 250, 0, 0.15);
-          stroke(0, (int)(((layerHeight - lastPoint.z) / layerHeight) * 100) + 50, 0);
-          //stroke(0, 250, 0, 0.15);
-        }
-        beginShape();
-        vertex((float)lastPoint.x, (float)lastPoint.y, (float)lastPoint.z);
-        for (Location p : e.points) {
-          vertex((float)p.x, (float)p.y, (float)p.z);
-          lastPoint = p;
-          currentFrame++;
-          if (currentFrame > frameCount) {
-            break;
-          }
-        }
-        endShape();
-      } else {
-        for (Location p : e.points) {
-          lastPoint = p;
-          currentFrame++;
-          if (currentFrame > frameCount) {
-            break;
-          }
-        }
-      }
-      if (currentFrame > frameCount) {
-        break;
       }
     }
-    layerHeight = lastPoint.z;
+    double currentHeight;
+    if (cLayer == null) {
+      currentHeight = this.layers.get(this.layers.size()-1).getLayerHeight();
+    } else {
+      currentHeight = cLayer.getLayerHeight();
+    }
+    
+    Location lastPoint = deltaConfig.effectorLocation;
+    for (int i = 0; i < this.currentLayer; i++) {
+      GCodeLayer layer = this.layers.get(i);
+      double layerHeight = layer.getLayerHeight();
+
+      stroke((int)(100 * (currentHeight - layerHeight) / currentHeight) + 50);
+      fill((int)(100 * (currentHeight - layerHeight) / currentHeight) + 50);
+      lastPoint = layer.drawLayer();
+      println("drawing layer: " + layer.getLayerHeight());
+    }
+    
+    if (cLayer != null) {
+      stroke(200);
+      lastPoint = cLayer.drawLayer(lastPoint);
+    }
+    
     deltaConfig.effectorLocation.x = lastPoint.x;
     deltaConfig.effectorLocation.y = lastPoint.y;
     deltaConfig.effectorLocation.z = lastPoint.z;
     deltaConfig.CalculateMotorHeights(deltaConfig.effectorLocation, deltaConfig.motorsLocation);
-    if (currentFrame > frameCount) {
-      frameCount++;
-    }
     fill(256);
     stroke(0);
   }
 
   void readFile(String filename) {
     this.filename = filename;
-    this.extrudePaths.clear();
-
     Location lastLocation = new Location();
+    this.layers.clear();
+    println("Adding layers: 0");
+    GCodeLayer currentLayer = new GCodeLayer();
+    this.layers.add(currentLayer);
+    
     ExtrudePath currentPath = new ExtrudePath();
     BufferedReader reader = createReader(this.filename);
     String line;
@@ -425,16 +525,36 @@ class GCode {
         if (tokens.length > 1) {
           String token = tokens[0].trim();
           if (token.equals("G28")) {
-            if (currentPath.isExtruding || currentPath.isRetracting) {
-              this.extrudePaths.add(currentPath);
-              currentPath = new ExtrudePath();
-            }
             Location motor = new Location(this.deltaConfig.aTowerHeight, this.deltaConfig.bTowerHeight, this.deltaConfig.cTowerHeight);
             Location effector = this.deltaConfig.CalculateEffectorLocation(motor, null);
+
+            if (currentPath.isExtruding || currentPath.isRetracting) {
+              if (currentPath.points.size() == 0) {
+                println("Warning: adding empty path: a");
+              }
+              currentLayer.addPath(currentPath);
+              currentPath = new ExtrudePath();
+              if (effector.z != currentLayer.getLayerHeight()) {
+                println("adding layer: a");
+                currentLayer = new GCodeLayer();
+                this.layers.add(currentLayer);
+              }
+            }
+
+            if (currentPath.points.size() > 0 && currentPath.points.get(currentPath.points.size()-1).z != effector.z) {
+              if (currentPath.points.size() == 0) {
+                println("Warning: adding empty path: b");
+              }
+              currentLayer.addPath(currentPath);
+              println("adding layer: b");
+              currentLayer = new GCodeLayer();
+              this.layers.add(currentLayer);
+              currentPath = new ExtrudePath();
+            }
+            
             currentPath.addPoint(effector);
             lastLocation = effector;
-          }
-          if (token.equals("G1") || token.equals("G0")) {
+          } else if (token.equals("G1") || token.equals("G0")) {
             Location nextLocation = new Location();
             nextLocation.x = lastLocation.x;
             nextLocation.y = lastLocation.y;
@@ -454,7 +574,7 @@ class GCode {
                   nextLocation.y = Double.parseDouble(token.substring(1));
                   break;
                 case 'Z':
-                  nextLocation.z = Double.parseDouble(token.substring(1)); //<>//
+                  nextLocation.z = Double.parseDouble(token.substring(1));
                   break;
                 case 'F':
                   // speed...ignore for now
@@ -462,33 +582,43 @@ class GCode {
                 case 'E':
                   if (token.charAt(1) == '-') {
                     extruder = -1;
-                    if (currentPath.isExtruding || !currentPath.isRetracting) {
-                      this.extrudePaths.add(currentPath);
-                      currentPath = new ExtrudePath();
-                      currentPath.isRetracting = true;
-                    }
                   } else {
                     extruder = 1;
-                    if (!currentPath.isExtruding || currentPath.isRetracting) {
-                      this.extrudePaths.add(currentPath);
-                      currentPath = new ExtrudePath();
-                      currentPath.isRetracting = true;
-                    }
                   }
                   break;
                 }
               }
             }
+            
             if (extruder == 0 && (currentPath.isExtruding || currentPath.isRetracting)) {
-              this.extrudePaths.add(currentPath);
+              if (lastLocation.z != nextLocation.z) {
+                currentLayer = new GCodeLayer();
+                this.layers.add(currentLayer);
+              }
+              currentLayer.addPath(currentPath);
               currentPath = new ExtrudePath();
             } else if (extruder == 1 && (!currentPath.isExtruding || currentPath.isRetracting)) {
-              this.extrudePaths.add(currentPath);
+              if (lastLocation.z != nextLocation.z) {
+                currentLayer = new GCodeLayer();
+                this.layers.add(currentLayer);
+              }
+              currentLayer.addPath(currentPath);
               currentPath = new ExtrudePath();
               currentPath.isExtruding = true;
             } else if (extruder == -1 && (currentPath.isExtruding || !currentPath.isRetracting)) {
+              if (lastLocation.z != nextLocation.z) {
+                currentLayer = new GCodeLayer();
+                this.layers.add(currentLayer);
+              }
+              currentLayer.addPath(currentPath);
               currentPath = new ExtrudePath();
               currentPath.isRetracting = true;
+            } else if (nextLocation.z != lastLocation.z && currentPath.points.size() != 0) {
+              currentLayer.addPath(currentPath);
+              println("adding layer: " + lastLocation.z + ": " + nextLocation.z);
+              currentLayer = new GCodeLayer();
+              this.layers.add(currentLayer);
+              currentPath = new ExtrudePath();
             }
             currentPath.addPoint(nextLocation);
             lastLocation = nextLocation;
@@ -499,6 +629,13 @@ class GCode {
         }
       }
     } while (line != null);
+    if (currentPath.points.size() == 0) {
+      println("Warning: adding empty path: g");
+    }
+    currentLayer.addPath(currentPath);
+    for (GCodeLayer layer : this.layers) {
+      layer.buildShapes();
+    }
   }
 }
 
