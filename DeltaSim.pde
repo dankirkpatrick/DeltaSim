@@ -16,7 +16,12 @@ ArrayList<Location> effectorErrors;      // The (X, Y, Z) errors for each of the
 ArrayList<Location> heightErrors;
 
 void setup() {
-  size(1000, 600, P3D);
+  size(600, 600, P3D);
+  
+  //paramsWindow = GWindow.getWindow(this, "Parameters", 620, 20, 400, 600, P2D);
+  //paramsWindow.addDrawHandler(this, "paramsDraw");
+  createGUI();
+  
   theoretical = new DeltaConfig();
   actual = new DeltaConfig();
   printLocation("Motors: ", theoretical.motorsLocation);
@@ -101,8 +106,8 @@ void calculateErrors() {
 
 void draw() {
   background(255);
-  actual.drawDelta(heightErrors); //<>//
-}
+  actual.drawDelta(heightErrors);
+} //<>//
 
 void mouseWheel(MouseEvent e) {
   theoretical.effectorLocation.z += e.getCount();
@@ -906,19 +911,20 @@ class DeltaConfig {
     popMatrix();
   }
 
-  void drawTable() {
-    fill(0);
-    textSize(18);
-    text(String.format("Tower A: [%.5f, %.5f]", this.aTowerLocation.x, this.aTowerLocation.y), 25, 100);
-    text(String.format("Tower A Angle: %.5f", degrees((float)this.aTowerAngle)), 25, 150);
-    text(String.format("Tower B: [%.5f, %.5f]", this.bTowerLocation.x, this.bTowerLocation.y), 25, 200);
-    text(String.format("Tower B Angle: %.5f", degrees((float)this.bTowerAngle)), 25, 250);
-    text(String.format("Tower C: [%.5f, %.5f]", this.cTowerLocation.x, this.cTowerLocation.y), 25, 300);
-    text(String.format("Tower C Angle: %.5f", degrees((float)this.cTowerAngle)), 25, 350);
-    text(String.format("Delta Radius: %.5f", this.deltaRadius), 25, 400);
-    text(String.format("Rod Length: %.5f", this.rodLength), 25, 450);
-    text(String.format("Effector: [%.5f, %.5f, %.5f]", this.effectorLocation.x, this.effectorLocation.y, this.effectorLocation.z), 25, 500);
-    text(String.format("Bed Normal: [%.5f, %.5f, %.5f, %.5f]", this.bedNormal.a, this.bedNormal.b, this.bedNormal.c, this.bedNormal.d), 25, 550);
+  void drawTable(PApplet app) {
+    app.fill(0);
+    app.stroke(0);
+    app.textSize(18);
+    app.text(String.format("Tower A: [%.5f, %.5f]", this.aTowerLocation.x, this.aTowerLocation.y), 25, 100);
+    app.text(String.format("Tower A Angle: %.5f", degrees((float)this.aTowerAngle)), 25, 150);
+    app.text(String.format("Tower B: [%.5f, %.5f]", this.bTowerLocation.x, this.bTowerLocation.y), 25, 200);
+    app.text(String.format("Tower B Angle: %.5f", degrees((float)this.bTowerAngle)), 25, 250);
+    app.text(String.format("Tower C: [%.5f, %.5f]", this.cTowerLocation.x, this.cTowerLocation.y), 25, 300);
+    app.text(String.format("Tower C Angle: %.5f", degrees((float)this.cTowerAngle)), 25, 350);
+    app.text(String.format("Delta Radius: %.5f", this.deltaRadius), 25, 400);
+    app.text(String.format("Rod Length: %.5f", this.rodLength), 25, 450);
+    app.text(String.format("Effector: [%.5f, %.5f, %.5f]", this.effectorLocation.x, this.effectorLocation.y, this.effectorLocation.z), 25, 500);
+    app.text(String.format("Bed Normal: [%.5f, %.5f, %.5f, %.5f]", this.bedNormal.a, this.bedNormal.b, this.bedNormal.c, this.bedNormal.d), 25, 550);
   }
 
   void drawDelta(ArrayList<Location> heightErrors) {
@@ -933,7 +939,7 @@ class DeltaConfig {
     drawTower(this.aTowerLocation, this.aTowerHeight, this.aTowerAngle, (selectedTower == 0));
     drawTower(this.bTowerLocation, this.bTowerHeight, this.bTowerAngle, (selectedTower == 1));
     drawTower(this.cTowerLocation, this.cTowerHeight, this.cTowerAngle, (selectedTower == 2));
-    gcode.drawGCode();
+    //gcode.drawGCode();
     drawMotor(this.aTowerLocation, this.motorsLocation.x, this.aTowerAngle);
     drawMotor(this.bTowerLocation, this.motorsLocation.y, this.bTowerAngle);
     drawMotor(this.cTowerLocation, this.motorsLocation.z, this.cTowerAngle);
@@ -942,10 +948,7 @@ class DeltaConfig {
     drawTowerRods(this.bTowerLocation, this.motorsLocation.y, this.bTowerAngle);
     drawTowerRods(this.cTowerLocation, this.motorsLocation.z, this.cTowerAngle);
     
-
     popMatrix();
-
-    drawTable();
   }
 
   void CalculateFromAngles() {
