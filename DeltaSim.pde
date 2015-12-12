@@ -988,9 +988,21 @@ class DeltaConfig {
     this.deltaRadius = Math.sqrt((this.aTowerLocation.x - this.centerLocation.x) * (this.aTowerLocation.x - this.centerLocation.x) + 
       (this.aTowerLocation.y - this.centerLocation.y) * (this.aTowerLocation.y - this.centerLocation.y));
 
-    this.aTowerAngle = Math.asin((this.aTowerLocation.y - this.centerLocation.y) / this.deltaRadius);                             
-    this.bTowerAngle = PI - Math.asin((this.bTowerLocation.y - this.centerLocation.y) / this.deltaRadius);                             
-    this.cTowerAngle = PI - Math.asin((this.cTowerLocation.y - this.centerLocation.y) / this.deltaRadius);                             
+    if (this.aTowerLocation.x > this.centerLocation.x) {
+      this.aTowerAngle = Math.atan((this.aTowerLocation.y - this.centerLocation.y) / (this.aTowerLocation.x - this.centerLocation.x));
+    } else {
+      this.aTowerAngle = Math.PI + Math.atan((this.aTowerLocation.y - this.centerLocation.y) / (this.aTowerLocation.x - this.centerLocation.x));
+    }
+    if (this.bTowerLocation.x > this.centerLocation.x) {
+      this.bTowerAngle = Math.atan((this.bTowerLocation.y - this.centerLocation.y) / (this.bTowerLocation.x - this.centerLocation.x));
+    } else {
+      this.bTowerAngle = Math.PI + Math.atan((this.bTowerLocation.y - this.centerLocation.y) / (this.bTowerLocation.x - this.centerLocation.x));
+    }
+    if (this.bTowerLocation.x > this.centerLocation.x) {
+      this.cTowerAngle = Math.atan((this.cTowerLocation.y - this.centerLocation.y) / (this.cTowerLocation.x - this.centerLocation.x));
+    } else {
+      this.cTowerAngle = Math.PI + Math.atan((this.cTowerLocation.y - this.centerLocation.y) / (this.cTowerLocation.x - this.centerLocation.x));
+    }
 
     println("Calculating center:");
     println("Center: (" + this.centerLocation.x + ", " + this.centerLocation.y + ")");
