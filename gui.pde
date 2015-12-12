@@ -16,32 +16,34 @@
 
 synchronized public void paramsDraw(PApplet appc, GWinData data) { //_CODE_:paramsWindow:242215:
   appc.background(230);
-  //actual.drawTable(appc);
-  towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
-  towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
-  towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
-  towerAXLocTF.setText(nf((float)actual.aTowerLocation.x, 1, 5));
-  towerBXLocTF.setText(nf((float)actual.bTowerLocation.x, 1, 5));
-  towerCXLocTF.setText(nf((float)actual.cTowerLocation.x, 1, 5));
-  towerAYLocTF.setText(nf((float)actual.aTowerLocation.y, 1, 5));
-  towerBYLocTF.setText(nf((float)actual.bTowerLocation.y, 1, 5));
-  towerCYLocTF.setText(nf((float)actual.cTowerLocation.y, 1, 5));
-  endstopAOffsetTF.setText(nf((float)actual.aEndstopOffset, 1, 5));
-  endstopBOffsetTF.setText(nf((float)actual.bEndstopOffset, 1, 5));
-  endstopCOffsetTF.setText(nf((float)actual.cEndstopOffset, 1, 5));
-  deltaRadiusTF.setText(nf((float)actual.deltaRadius, 1, 5));
-  rodLengthTF.setText(nf((float)actual.rodLength, 1, 5));
-  zMultiplierTF.setText(nf((float)zMultiplier, 1, 5));
-  effectorXLocTF.setText(nf((float)actual.effectorLocation.x, 1, 5));
-  effectorYLocTF.setText(nf((float)actual.effectorLocation.y, 1, 5));
-  effectorZLocTF.setText(nf((float)actual.effectorLocation.z, 1, 5));
-  motorALocTF.setText(nf((float)actual.motorsLocation.x, 1, 5));
-  motorBLocTF.setText(nf((float)actual.motorsLocation.y, 1, 5));
-  motorCLocTF.setText(nf((float)actual.motorsLocation.z, 1, 5));
-  bedNormalATF.setText(nf((float)actual.bedNormal.a, 1, 5));
-  bedNormalBTF.setText(nf((float)actual.bedNormal.b, 1, 5));
-  bedNormalCTF.setText(nf((float)actual.bedNormal.c, 1, 5));
-  bedNormalDTF.setText(nf((float)actual.bedNormal.d, 1, 5));
+  if (actual != null) {
+    //actual.drawTable(appc);
+    towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
+    towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
+    towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
+    towerAXLocTF.setText(nf((float)actual.aTowerLocation.x, 1, 5));
+    towerBXLocTF.setText(nf((float)actual.bTowerLocation.x, 1, 5));
+    towerCXLocTF.setText(nf((float)actual.cTowerLocation.x, 1, 5));
+    towerAYLocTF.setText(nf((float)actual.aTowerLocation.y, 1, 5));
+    towerBYLocTF.setText(nf((float)actual.bTowerLocation.y, 1, 5));
+    towerCYLocTF.setText(nf((float)actual.cTowerLocation.y, 1, 5));
+    endstopAOffsetTF.setText(nf((float)actual.aEndstopOffset, 1, 5));
+    endstopBOffsetTF.setText(nf((float)actual.bEndstopOffset, 1, 5));
+    endstopCOffsetTF.setText(nf((float)actual.cEndstopOffset, 1, 5));
+    deltaRadiusTF.setText(nf((float)actual.deltaRadius, 1, 5));
+    rodLengthTF.setText(nf((float)actual.rodLength, 1, 5));
+    zMultiplierTF.setText(nf((float)zMultiplier, 1, 5));
+    effectorXLocTF.setText(nf((float)actual.effectorLocation.x, 1, 5));
+    effectorYLocTF.setText(nf((float)actual.effectorLocation.y, 1, 5));
+    effectorZLocTF.setText(nf((float)actual.effectorLocation.z, 1, 5));
+    motorALocTF.setText(nf((float)actual.motorsLocation.x, 1, 5));
+    motorBLocTF.setText(nf((float)actual.motorsLocation.y, 1, 5));
+    motorCLocTF.setText(nf((float)actual.motorsLocation.z, 1, 5));
+    bedNormalATF.setText(nf((float)actual.bedNormal.a, 1, 5));
+    bedNormalBTF.setText(nf((float)actual.bedNormal.b, 1, 5));
+    bedNormalCTF.setText(nf((float)actual.bedNormal.c, 1, 5));
+    bedNormalDTF.setText(nf((float)actual.bedNormal.d, 1, 5));
+  }
 } //_CODE_:paramsWindow:242215:
 
 public void towerAAngleChange(GTextField source, GEvent event) { //_CODE_:towerAAngleTF:786243:
