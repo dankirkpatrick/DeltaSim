@@ -6,6 +6,7 @@ DeltaConfig actual;
 DanKirkpatrickDeltaTransform dkTheoreticalTransform;
 DanKirkpatrickDeltaTransform dkActualTransform;
 
+DavidCrockerCalibration davidCrockerCalibration;
 DavidCrockerDeltaTransform dcTheoreticalTransform;
 DavidCrockerDeltaTransform dcActualTransform;
 
@@ -121,20 +122,10 @@ void setup() {
 
   //createCalibrationPoints(theoretical.deltaRadius);
   createTestPoints();
-  /*
-  calib1 = new DavidCrockerCalibration(theoretical, actual);
-   calib1.recalc();
-   Location testEff1 = new Location();
-   Location testMotor1 = new Location();
-   calib1.transform(testEff1, testMotor1);
-   printLocation("Test1: effector: ", testEff1);
-   printLocation("Test1: motor: ", testMotor1);
-   calib1.inverseTransform(testMotor1, testEff1);
-   printLocation("Test1: effector: ", testEff1);
-   printLocation("Test1: motor: ", testMotor1);
-   */
   calculateErrors();
-
+  
+  davidCrockerCalibration = new DavidCrockerCalibration();
+  
   gcode = new GCode(actual);
   gcode.readFile("/Users/dan/Downloads/lowpolyskulllisa.gcode");
 }
@@ -343,9 +334,7 @@ void keyPressed() {
     calculateErrors();
   } else if (key == 'p') {
     // Do z-probe calibration
-    DavidCrockerCalibration c = new DavidCrockerCalibration(); //<>//
-    c.config = theoretical;
-    c.doDeltaCalibration(6);
+    davidCrockerCalibration.doDeltaCalibration(theoretical, 6, testPoints); //<>//
     calculateErrors();
   } else if (key == CODED) {
     Location loc;
@@ -1165,9 +1154,9 @@ class DavidCrockerDeltaTransform implements DeltaTransform {
 class DavidCrockerCalibration {
   DeltaConfig config;
 
-  void doDeltaCalibration(int numFactors) {
+  void doDeltaCalibration(DeltaConfig config, int numFactors, ArrayList<Location> samplePoints) {
     int numDeltaFactors = 7;
-    int numPoints = testPoints.size();
+    int numPoints = samplePoints.size();
 
     if (numFactors != 3 && numFactors != 4 && numFactors != 6 && numFactors != 7) {
       println("ERROR!!!  only 3, 4, 6, or 7 factors supported for calibration");
@@ -1193,7 +1182,7 @@ class DavidCrockerCalibration {
       println("David Crocker Calibration: iteration " + iteration);
       for (int i = 0; i < numPoints; ++i) {
         for (int j = 0; j < numFactors; ++j) {
-          derivativeMatrix.data[i][j] = ((DavidCrockerDeltaTransform)this.config.transform).computeDerivative(j, motorTestHeights.get(i));
+          derivativeMatrix.data[i][j] = ((DavidCrockerDeltaTransform)config.transform).computeDerivative(j, motorTestHeights.get(i));
         }
       }
       //derivativeMatrix.debug("Derivative Matrix");
@@ -1218,7 +1207,7 @@ class DavidCrockerCalibration {
       solution.debug("Solution");
 
       for (int i = 0; i < numPoints; ++i) {
-        residuals.data[i] = testPoints.get(i).z;
+        residuals.data[i] = samplePoints.get(i).z;
         for (int j = 0; j < numFactors; j++) {
           residuals.data[i] += solution.data[j] * derivativeMatrix.data[i][j];
         }
@@ -1226,13 +1215,13 @@ class DavidCrockerCalibration {
       residuals.debug("Actual Residuals");
 
       // Apply solution to theoretical delta config
-      applySolution(solution, numFactors);
+      applySolution(config, solution, numFactors);
 
       double sumOfSquares = 0;
       Location motors = new Location();
       Location effector = new Location();
       for (int i = 0; i < numPoints; i++) {
-        Location te = testPoints.get(i);
+        Location te = samplePoints.get(i);
         Location tm = motorTestHeights.get(i);
         motors.x = tm.x + solution.data[0];
         motors.y = tm.y + solution.data[1];
@@ -1256,29 +1245,29 @@ class DavidCrockerCalibration {
             " after:" + expectedRmsError);
   }
 
-  void applySolution(FixedVector solution, int numFactors) {
+  void applySolution(DeltaConfig config, FixedVector solution, int numFactors) {
     for (int i = 0; i < numFactors; i++) {
       switch (i) {
       case 0:
-        this.config.aEndstopOffset += solution.data[0];
+        config.aEndstopOffset += solution.data[0];
         break;
       case 1:
-        this.config.bEndstopOffset += solution.data[1];
+        config.bEndstopOffset += solution.data[1];
         break;
       case 2:
-        this.config.cEndstopOffset += solution.data[2];
+        config.cEndstopOffset += solution.data[2];
         break;
       case 3:
-        this.config.deltaRadius += solution.data[3];
+        config.deltaRadius += solution.data[3];
         break;
       case 4:
-        this.config.aTowerAngle += Math.toRadians(solution.data[4]);
+        config.aTowerAngle += Math.toRadians(solution.data[4]);
         break;
       case 5:
-        this.config.bTowerAngle += Math.toRadians(solution.data[5]);
+        config.bTowerAngle += Math.toRadians(solution.data[5]);
         break;
       case 6:
-        this.config.rodLength += Math.toRadians(solution.data[6]);
+        config.rodLength += Math.toRadians(solution.data[6]);
         break;
       }
     }
