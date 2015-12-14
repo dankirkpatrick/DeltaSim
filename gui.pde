@@ -14,10 +14,7 @@
  * =========================================================
  */
 
-synchronized public void paramsDraw(PApplet appc, GWinData data) { //_CODE_:paramsWindow:242215:
-  appc.background(230);
-  if (actual != null) {
-    //actual.drawTable(appc);
+void setAllText() {
     towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
     towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
     towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
@@ -51,7 +48,10 @@ synchronized public void paramsDraw(PApplet appc, GWinData data) { //_CODE_:para
     errorZStdDevValue.setText(nf((float)errorZStdDev, 1, 5));
     errorHeightAvgValue.setText(nf((float)errorHeightAvg, 1, 5));
     errorHeightStdDevValue.setText(nf((float)errorHeightStdDev, 1, 5));
-  }
+}
+
+synchronized public void paramsDraw(PApplet appc, GWinData data) { //_CODE_:paramsWindow:242215:
+  appc.background(230);
 } //_CODE_:paramsWindow:242215:
 
 public void towerAAngleChange(GTextField source, GEvent event) { //_CODE_:towerAAngleTF:786243:

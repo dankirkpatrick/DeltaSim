@@ -12,10 +12,14 @@ DavidCrockerDeltaTransform dcActualTransform;
 
 Location testEffectorLocation  = null;
 float zMultiplier;
+float tensorMultiplier;
 
 GCode gcode;
 
+boolean redrawDelta = true;
+
 int selectedTower = 0;
+int viewMode = 3;
 
 float xAngle = 0;
 float zAngle = 0;
@@ -27,6 +31,9 @@ ArrayList<Location> testPoints;          // The (X, Y, Z) effector location for 
 ArrayList<Location> motorTestHeights;    // The (A, B, C) motor locations for test points
 ArrayList<Location> effectorErrors;      // The (X, Y, Z) errors for each of the test points
 ArrayList<Location> heightErrors;        // The (X, Y) effector location, and (Z) height error
+
+PShape probePointGroupShape;
+PShape tensorGroupShape;
 
 double errorHeightAvg;
 double errorHeightVariance;
@@ -50,7 +57,7 @@ void createCalibrationPoints(double deltaRadius) {
   motorTestHeights = new ArrayList<Location>();
   effectorErrors = new ArrayList<Location>();
   heightErrors = new ArrayList<Location>();
-
+  
   testPoints.add(new Location(0, 0, 0));
   motorTestHeights.add(new Location());
   effectorErrors.add(new Location());
@@ -82,7 +89,7 @@ void createTestPoints() {
   effectorErrors = new ArrayList<Location>();
   heightErrors = new ArrayList<Location>();
   int angle = 360;
-  for (int radius = 0; radius < (theoretical.deltaRadius); radius+= 5) {
+  for (int radius = 0; radius < (theoretical.deltaRadius); radius+= 15) {
     for (angle = angle - 360; angle < 360; angle += (radius > 0? (theoretical.deltaRadius + 5 - radius)/3 : 360)) {
       Location l = new Location(radius*Math.sin(radians(angle)), radius*Math.cos(radians(angle)), 0);
       testPoints.add(l);
@@ -110,6 +117,7 @@ void setup() {
   actual.effectorLocation.y = theoretical.effectorLocation.y = 0;
   actual.effectorLocation.z = theoretical.effectorLocation.z = 0;
   zMultiplier = 50;
+  tensorMultiplier = 20;
 
   theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
   theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
@@ -143,6 +151,8 @@ void calculateErrors() {
   double sumYErrorX2 = 0;
   double sumZErrorX2 = 0;
   double sumHeightErrorX2 = 0;
+  setAllText();
+  
   for (int i = 0; i < testPoints.size(); i++) {
     Location l = testPoints.get(i);
     Location m = motorTestHeights.get(i);
@@ -207,14 +217,21 @@ void calculateErrors() {
   actual.motorsLocation.x -= actual.aEndstopOffset;
   actual.motorsLocation.y -= actual.bEndstopOffset;
   actual.motorsLocation.z -= actual.cEndstopOffset;
+  
+  //probePointGroupShape = theoretical.buildHSVProbePoints(testPoints);
+  tensorGroupShape = theoretical.buildTensors(heightErrors, effectorErrors); //<>//
 }
 
 void draw() {
-  background(255);
-  actual.drawDelta(heightErrors);
+  if (redrawDelta) {
+    redrawDelta = false;
+    background(255);
+    actual.drawDelta(heightErrors, effectorErrors);
+  }
 }
 
 void mouseWheel(MouseEvent e) {
+  redrawDelta = true;
   theoretical.effectorLocation.z += e.getCount();
   theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
   theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
@@ -227,6 +244,7 @@ void mouseWheel(MouseEvent e) {
 }
 
 void mouseDragged() {
+  redrawDelta = true;
   if (mouseButton == LEFT) {
     zAngle += (pmouseX - mouseX) / 150.0;
     xAngle += (pmouseY - mouseY) / 150.0;
@@ -248,6 +266,7 @@ void mouseDragged() {
 }
 
 void keyPressed() {
+  redrawDelta = true;
   if (key == '1') {
     selectedTower = 0;
   } else if (key == '2') {
@@ -332,6 +351,8 @@ void keyPressed() {
   } else if (key == 'z') {
     actual.bedNormal.d -= 0.025;
     calculateErrors();
+  } else if (key == 't') {
+    viewMode = (viewMode + 1) % 4;
   } else if (key == 'p') {
     // Do z-probe calibration
     davidCrockerCalibration.doDeltaCalibration(theoretical, 6, testPoints); //<>//
@@ -1450,6 +1471,15 @@ class DeltaConfig {
     return min;
   }
 
+  void setHSVProbeColor(PShape s, double sample, double hueFactor) {
+    if (Double.isNaN(sample)) {
+      s.fill(0, 100, 100);
+    } else {
+      //println("Sample:" + sample + "  HueFactor:" + hueFactor + "Hue: " + ((sample * hueFactor) + 120));
+      s.fill((int)(sample * hueFactor) + 120, 100, 50);
+    }
+  }
+
   void setHSVProbeColor(double sample, double hueFactor) {
     if (Double.isNaN(sample)) {
       fill(0, 100, 100);
@@ -1459,7 +1489,28 @@ class DeltaConfig {
     }
   }
 
+  PShape buildHSVProbePoints(ArrayList<Location> heightErrors) {
+    PShape group = createShape(GROUP);
+    
+    group.colorMode(HSB, 360, 100, 100);
+    double maxE = getMaxError(heightErrors);
+    double minE = getMinError(heightErrors);
+    double hueFactor = 120 / Math.max(Math.max(Math.abs(maxE), Math.abs(minE)), 0.1);
+    for (Location l : heightErrors) {
+      PShape s = createShape(ELLIPSE, (float)l.x, (float)l.y, 10, 10);
+      s.translate(0, 0, (float)(l.z * zMultiplier));
+      setHSVProbeColor(s, l.z, hueFactor);
+      group.addChild(s);
+    }
+    //group.colorMode(RGB);
+    //group.stroke(0);
+    
+    return group;
+  }
+
   void drawHSVProbePoints(ArrayList<Location> heightErrors) {
+    //shape(probePointGroupShape);
+    
     colorMode(HSB, 360, 100, 100);
     double maxE = getMaxError(heightErrors);
     double minE = getMinError(heightErrors);
@@ -1472,6 +1523,50 @@ class DeltaConfig {
       popMatrix();
     }
     colorMode(RGB);
+    stroke(0);
+  }
+
+  PShape buildTensors(ArrayList<Location> heightErrors, ArrayList<Location> effectorErrors) {
+    PShape group = createShape(GROUP);
+    
+    for (int i = 0; i < heightErrors.size(); i++) {
+      Location h = heightErrors.get(i);
+      Location e = effectorErrors.get(i);
+      PShape tensor = createShape();
+      tensor.beginShape();
+      tensor.stroke(0);
+      tensor.vertex((float)h.x, (float)h.y, (float)(h.z * zMultiplier));
+      tensor.vertex((float)(h.x + (tensorMultiplier * e.x)), (float)(h.y + (tensorMultiplier * e.y)), (float)(h.z * zMultiplier + (tensorMultiplier * e.z)));
+      tensor.endShape();
+      group.addChild(tensor);
+    }
+    
+    return group;
+  }
+
+  void drawTensors(ArrayList<Location> heightErrors, ArrayList<Location> effectorErrors) {
+    colorMode(RGB);
+    noFill();
+    stroke(0);
+      beginShape(LINES);
+    for (int i = 0; i < heightErrors.size(); i++) {
+      Location h = heightErrors.get(i);
+      Location e = effectorErrors.get(i);
+      double z1 = h.z * zMultiplier;
+      double x2 = h.x + (e.x * tensorMultiplier);
+      double y2 = h.y + (e.y * tensorMultiplier);
+      double z2 = (h.z * zMultiplier) + (e.z * tensorMultiplier);
+/*      
+      printLocation("Effector:", h); 
+      printLocation("Tensor:", e); 
+      println("["+h.x+","+h.y+","+z1+"] -> ["+x2+","+y2+","+z2+"]");
+  */    
+      vertex((float)h.x, (float)h.y, (float)(z1));
+      vertex((float)(x2), (float)(y2), (float)(z2));
+    }
+      endShape();
+      //line((float)h.x, (float)h.y, (float)x2, (float)y2);
+    fill(0);
     stroke(0);
   }
 
@@ -1575,7 +1670,7 @@ class DeltaConfig {
     app.text(String.format("Bed Normal: [%.5f, %.5f, %.5f, %.5f]", this.bedNormal.a, this.bedNormal.b, this.bedNormal.c, this.bedNormal.d), 25, 550);
   }
 
-  void drawDelta(ArrayList<Location> heightErrors) {
+  void drawDelta(ArrayList<Location> heightErrors, ArrayList<Location> effectorErrors) {
     pushMatrix();
 
     translate(width/2, 2*height/3, -50);
@@ -1584,7 +1679,8 @@ class DeltaConfig {
 
     scale(1, -1, 1);
     drawBed();
-    drawHSVProbePoints(heightErrors);
+    if ((viewMode & 0x01) == 0x01) drawHSVProbePoints(heightErrors);
+    if (viewMode > 1) drawTensors(heightErrors, effectorErrors);
     drawTower(this.aTowerLocation, this.aTowerHeight, this.aTowerAngle, (selectedTower == 0));
     drawTower(this.bTowerLocation, this.bTowerHeight, this.bTowerAngle, (selectedTower == 1));
     drawTower(this.cTowerLocation, this.cTowerHeight, this.cTowerAngle, (selectedTower == 2));
@@ -1597,6 +1693,7 @@ class DeltaConfig {
     drawTowerRods(this.bTowerLocation, this.motorsLocation.y, this.bTowerAngle);
     drawTowerRods(this.cTowerLocation, this.motorsLocation.z, this.cTowerAngle);
 
+    
     popMatrix();
   }
 
