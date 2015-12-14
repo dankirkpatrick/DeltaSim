@@ -27,6 +27,19 @@ ArrayList<Location> motorTestHeights;    // The (A, B, C) motor locations for te
 ArrayList<Location> effectorErrors;      // The (X, Y, Z) errors for each of the test points
 ArrayList<Location> heightErrors;        // The (X, Y) effector location, and (Z) height error
 
+double errorHeightAvg;
+double errorHeightVariance;
+double errorHeightStdDev;
+double errorXAvg;
+double errorXVariance;
+double errorXStdDev;
+double errorYAvg;
+double errorYVariance;
+double errorYStdDev;
+double errorZAvg;
+double errorZVariance;
+double errorZStdDev;
+
 double sq(double value) {
   return value * value;
 }
@@ -131,6 +144,14 @@ void calculateErrors() {
   double y = actual.effectorLocation.y;
   double z = actual.effectorLocation.z;
 
+  double sumXErrorX = 0;
+  double sumYErrorX = 0;
+  double sumZErrorX = 0;
+  double sumHeightErrorX = 0;
+  double sumXErrorX2 = 0;
+  double sumYErrorX2 = 0;
+  double sumZErrorX2 = 0;
+  double sumHeightErrorX2 = 0;
   for (int i = 0; i < testPoints.size(); i++) {
     Location l = testPoints.get(i);
     Location m = motorTestHeights.get(i);
@@ -157,7 +178,32 @@ void calculateErrors() {
     h.x = theoretical.effectorLocation.x;
     h.y = theoretical.effectorLocation.y;
     h.z = actual.calculateActualBedHeight(theoretical.effectorLocation.x, theoretical.effectorLocation.y) - actual.effectorLocation.z;
+    
+    sumXErrorX += (e.x);
+    sumYErrorX += (e.y);
+    sumZErrorX += (e.z);
+    sumHeightErrorX += (h.z);
+    sumXErrorX2 += sq(e.x);
+    sumYErrorX2 += sq(e.y);
+    sumZErrorX2 += sq(e.z);
+    sumHeightErrorX2 += sq(h.z);
   }
+
+  errorHeightAvg = sumHeightErrorX / testPoints.size();
+  errorHeightVariance = sumHeightErrorX2 / (testPoints.size() - 1);
+  errorHeightStdDev = Math.sqrt(errorHeightVariance);
+  errorXAvg = sumXErrorX / testPoints.size();
+  errorXVariance = sumXErrorX2 / (testPoints.size() - 1);
+  errorXStdDev = Math.sqrt(errorXVariance);
+  errorYAvg = sumYErrorX / testPoints.size();
+  errorYVariance = sumYErrorX2 / (testPoints.size() - 1);
+  errorYStdDev = Math.sqrt(errorYVariance);
+  errorZAvg = sumZErrorX / testPoints.size();
+  errorZVariance = sumZErrorX2 / (testPoints.size() - 1);
+  errorZStdDev = Math.sqrt(errorZVariance);
+  println("Mean: " + errorHeightAvg);
+  println("Variance: " + errorHeightVariance);
+  println("StdDev: " + errorHeightStdDev);
 
   theoretical.effectorLocation.x = actual.effectorLocation.x = x;
   theoretical.effectorLocation.y = actual.effectorLocation.y = y;
@@ -267,10 +313,10 @@ void keyPressed() {
       actual.aTowerAngle += Math.toRadians(0.2);
       break;
     case 1:
-      actual.aTowerAngle += Math.toRadians(0.2);
+      actual.bTowerAngle += Math.toRadians(0.2);
       break;
     case 2:
-      actual.aTowerAngle += Math.toRadians(0.2);
+      actual.cTowerAngle += Math.toRadians(0.2);
       break;
     }
     actual.CalculateFromAngles();
@@ -281,10 +327,10 @@ void keyPressed() {
       actual.aTowerAngle -= Math.toRadians(0.2);
       break;
     case 1:
-      actual.aTowerAngle -= Math.toRadians(0.2);
+      actual.bTowerAngle -= Math.toRadians(0.2);
       break;
     case 2:
-      actual.aTowerAngle -= Math.toRadians(0.2);
+      actual.cTowerAngle -= Math.toRadians(0.2);
       break;
     }
     actual.CalculateFromAngles();
@@ -784,6 +830,7 @@ class FixedMatrix {
 
   void gaussJordan(FixedVector solution, int numRows) {
     for (int i = 0; i < numRows; ++i) {
+      println("Gauss-Jordan: Finding max diagonal for row " + i);
       double vmax = Math.abs(this.data[i][i]);
       for (int j = i+1; j < this.data.length; ++j) {
         double rmax = Math.abs(this.data[j][i]);
@@ -793,6 +840,7 @@ class FixedMatrix {
         }
       }
 
+      println("Normalizing other matrix rows");
       double v = this.data[i][i];
       for (int j = 0; j < i; j++) {
         double factor = this.data[j][i] / v;
@@ -1141,12 +1189,14 @@ class DavidCrockerCalibration {
     FixedVector residuals = new FixedVector(numPoints);
     FixedVector expectedResiduals = new FixedVector(numPoints);
     do {
+      iteration++;
+      println("David Crocker Calibration: iteration " + iteration);
       for (int i = 0; i < numPoints; ++i) {
         for (int j = 0; j < numFactors; ++j) {
           derivativeMatrix.data[i][j] = ((DavidCrockerDeltaTransform)this.config.transform).computeDerivative(j, motorTestHeights.get(i));
         }
       }
-      derivativeMatrix.debug("Derivative Matrix");
+      //derivativeMatrix.debug("Derivative Matrix");
 
       for (int i = 0; i < numFactors; ++i) {
         for (int j = 0; j < numFactors; ++j) {
@@ -1196,7 +1246,6 @@ class DavidCrockerCalibration {
       expectedRmsError = Math.sqrt(sumOfSquares / numPoints);
       expectedResiduals.debug("Expected probe error");
 
-      iteration++;
       // Calculate expected probe errors
     } while (iteration < 2);
     
@@ -1430,7 +1479,7 @@ class DeltaConfig {
       pushMatrix();
       translate(0, 0, (float)(l.z * zMultiplier));
       setHSVProbeColor(l.z, hueFactor);
-      ellipse((float)l.x, (float)l.y, 15, 15);
+      ellipse((float)l.x, (float)l.y, 10, 10);
       popMatrix();
     }
     colorMode(RGB);
@@ -1576,6 +1625,7 @@ class DeltaConfig {
     this.centerLocation.y = 0;
 
     this.transform.recalc(this);
+    /*
     println("Calculating tower locations:");
     println("Rod Length: " + this.rodLength);
     println("Delta radius: " + this.deltaRadius);
@@ -1585,6 +1635,7 @@ class DeltaConfig {
     println("Tower A: (" + this.aTowerLocation.x + ", " + this.aTowerLocation.y + ")");
     println("Tower B: (" + this.bTowerLocation.x + ", " + this.bTowerLocation.y + ")");
     println("Tower C: (" + this.cTowerLocation.x + ", " + this.cTowerLocation.y + ")");
+    */
   }  
 
   void CalculateCenter() {
@@ -1617,12 +1668,14 @@ class DeltaConfig {
     }
 
     transform.recalc(this);
+    /*
     println("Calculating center:");
     println("Center: (" + this.centerLocation.x + ", " + this.centerLocation.y + ")");
     println("Radius: " + this.deltaRadius);
     println("aTowerAngle: " + this.aTowerAngle);
     println("bTowerAngle: " + this.bTowerAngle);
     println("cTowerAngle: " + this.cTowerAngle);
+    */
   }
 
   double calculateActualBedHeight(double pX, double pY) {
