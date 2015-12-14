@@ -1,29 +1,94 @@
-import g4p_controls.*; //<>// //<>//
+import g4p_controls.*; //<>// //<>// //<>//
 
 DeltaConfig theoretical;
 DeltaConfig actual;
+
+DanKirkpatrickDeltaTransform dkTheoreticalTransform;
+DanKirkpatrickDeltaTransform dkActualTransform;
+
+DavidCrockerDeltaTransform dcTheoreticalTransform;
+DavidCrockerDeltaTransform dcActualTransform;
+
 Location testEffectorLocation  = null;
 float zMultiplier;
+
 GCode gcode;
 
 int selectedTower = 0;
+
 float xAngle = 0;
 float zAngle = 0;
+
 float xBedAngle = 0;
 float yBedAngle = 0;
-ArrayList<Location> testPoints;  // The (X, Y, Z) location for test points
+
+ArrayList<Location> testPoints;          // The (X, Y, Z) effector location for test points
+ArrayList<Location> motorTestHeights;    // The (A, B, C) motor locations for test points
 ArrayList<Location> effectorErrors;      // The (X, Y, Z) errors for each of the test points
-ArrayList<Location> heightErrors;
+ArrayList<Location> heightErrors;        // The (X, Y) effector location, and (Z) height error
+
+double sq(double value) {
+  return value * value;
+}
+
+void createCalibrationPoints(double deltaRadius) {
+  testPoints = new ArrayList<Location>();
+  motorTestHeights = new ArrayList<Location>();
+  effectorErrors = new ArrayList<Location>();
+  heightErrors = new ArrayList<Location>();
+
+  testPoints.add(new Location(0, 0, 0));
+  motorTestHeights.add(new Location());
+  effectorErrors.add(new Location());
+  heightErrors.add(new Location());
+
+  for (int angle = 0; angle < 360; angle += 60) {
+    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle)), deltaRadius*Math.sin(radians(angle)), 0));
+    motorTestHeights.add(new Location());
+    effectorErrors.add(new Location());
+    heightErrors.add(new Location());
+
+    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle))/2.0, deltaRadius*Math.sin(radians(angle))/2.0, 0));
+    motorTestHeights.add(new Location());
+    effectorErrors.add(new Location());
+    heightErrors.add(new Location());
+  }
+
+  for (int angle = 30; angle < 360; angle += 60) {
+    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle))/Math.sqrt(2), deltaRadius*Math.sin(radians(angle))/Math.sqrt(2), 0));
+    motorTestHeights.add(new Location());
+    effectorErrors.add(new Location());
+    heightErrors.add(new Location());
+  }
+}
+
+void createTestPoints() {
+  testPoints = new ArrayList<Location>();
+  motorTestHeights = new ArrayList<Location>();
+  effectorErrors = new ArrayList<Location>();
+  heightErrors = new ArrayList<Location>();
+  int angle = 360;
+  for (int radius = 0; radius < (theoretical.deltaRadius); radius+= 5) {
+    for (angle = angle - 360; angle < 360; angle += (radius > 0? (theoretical.deltaRadius + 5 - radius)/3 : 360)) {
+      Location l = new Location(radius*Math.sin(radians(angle)), radius*Math.cos(radians(angle)), 0);
+      testPoints.add(l);
+      motorTestHeights.add(new Location());
+      effectorErrors.add(new Location());
+      heightErrors.add(new Location());
+    }
+  }
+}
 
 void setup() {
   size(600, 600, P3D);
-  
+
   //paramsWindow = GWindow.getWindow(this, "Parameters", 620, 20, 400, 600, P2D);
   //paramsWindow.addDrawHandler(this, "paramsDraw");
   createGUI();
-  
+
   theoretical = new DeltaConfig();
   actual = new DeltaConfig();
+
   printLocation("Motors: ", theoretical.motorsLocation);
   printLocation("Effector: ", theoretical.effectorLocation);
 
@@ -41,23 +106,24 @@ void setup() {
   actual.motorsLocation.z = theoretical.motorsLocation.z + actual.cEndstopOffset;
   actual.CalculateEffectorLocation(actual.motorsLocation, actual.effectorLocation);
 
-  testPoints = new ArrayList<Location>();
-  effectorErrors = new ArrayList<Location>();
-  heightErrors = new ArrayList<Location>();
-  int angle = 360;
-  for (int radius = 0; radius < (theoretical.deltaRadius); radius+= 5) {
-    for (angle = angle - 360; angle < 360; angle += (radius > 0? (theoretical.deltaRadius + 5 - radius)/3 : 360)) {
-      Location l = new Location(radius*Math.sin(radians(angle)), radius*Math.cos(radians(angle)), 0);
-      testPoints.add(l);
-      effectorErrors.add(new Location());
-      heightErrors.add(new Location());
-    }
-  }
-
+  //createCalibrationPoints(theoretical.deltaRadius);
+  createTestPoints();
+  /*
+  calib1 = new DavidCrockerCalibration(theoretical, actual);
+   calib1.recalc();
+   Location testEff1 = new Location();
+   Location testMotor1 = new Location();
+   calib1.transform(testEff1, testMotor1);
+   printLocation("Test1: effector: ", testEff1);
+   printLocation("Test1: motor: ", testMotor1);
+   calib1.inverseTransform(testMotor1, testEff1);
+   printLocation("Test1: effector: ", testEff1);
+   printLocation("Test1: motor: ", testMotor1);
+   */
   calculateErrors();
 
   gcode = new GCode(actual);
-  gcode.readFile("/Users/dan/Downloads/lowpolyskulllisa.gcode"); //<>//
+  gcode.readFile("/Users/dan/Downloads/lowpolyskulllisa.gcode");
 }
 
 void calculateErrors() {
@@ -67,14 +133,16 @@ void calculateErrors() {
 
   for (int i = 0; i < testPoints.size(); i++) {
     Location l = testPoints.get(i);
+    Location m = motorTestHeights.get(i);
     theoretical.effectorLocation.x = l.x;
     theoretical.effectorLocation.y = l.y;
     theoretical.effectorLocation.z = 0;
 
     theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
-    theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
-    theoretical.motorsLocation.y -= theoretical.bEndstopOffset;
-    theoretical.motorsLocation.z -= theoretical.cEndstopOffset;
+    m.x = theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
+    m.y = theoretical.motorsLocation.y -= theoretical.bEndstopOffset;
+    m.z = theoretical.motorsLocation.z -= theoretical.cEndstopOffset;
+
     actual.motorsLocation.x = theoretical.motorsLocation.x + actual.aEndstopOffset;
     actual.motorsLocation.y = theoretical.motorsLocation.y + actual.bEndstopOffset;
     actual.motorsLocation.z = theoretical.motorsLocation.z + actual.cEndstopOffset;
@@ -107,7 +175,7 @@ void calculateErrors() {
 void draw() {
   background(255);
   actual.drawDelta(heightErrors);
-} //<>//
+}
 
 void mouseWheel(MouseEvent e) {
   theoretical.effectorLocation.z += e.getCount();
@@ -149,12 +217,8 @@ void keyPressed() {
     selectedTower = 1;
   } else if (key == '3') {
     selectedTower = 2;
-  } else if (key == 'r') {
-    selectedTower = 3;
-  } else if (key == 'd') {
-    selectedTower = 4;
-  } else if (key == 'b') {
-    selectedTower = 5;
+  } else if (key == '0') {
+    selectedTower = -1;
   } else if (key == 'i') {
     xBedAngle += radians(0.1);
     actual.CalculateBedNormal();
@@ -175,40 +239,71 @@ void keyPressed() {
     switch (selectedTower) {
     case 0:
       actual.aEndstopOffset += 0.01;
-      calculateErrors();
       break;
     case 1:
       actual.bEndstopOffset += 0.01;
-      calculateErrors();
       break;
     case 2:
       actual.cEndstopOffset += 0.01;
-      calculateErrors();
       break;
     }
+    calculateErrors();
   } else if (key == 'x') {
     switch (selectedTower) {
     case 0:
       actual.aEndstopOffset -= 0.01;
-      calculateErrors();
       break;
     case 1:
       actual.bEndstopOffset -= 0.01;
-      calculateErrors();
       break;
     case 2:
       actual.cEndstopOffset -= 0.01;
-      calculateErrors();
       break;
     }
+    calculateErrors();
+  } else if (key == 'd') {
+    switch (selectedTower) {
+    case 0:
+      actual.aTowerAngle += Math.toRadians(0.2);
+      break;
+    case 1:
+      actual.aTowerAngle += Math.toRadians(0.2);
+      break;
+    case 2:
+      actual.aTowerAngle += Math.toRadians(0.2);
+      break;
+    }
+    actual.CalculateFromAngles();
+    calculateErrors();
+  } else if (key == 'c') {
+    switch (selectedTower) {
+    case 0:
+      actual.aTowerAngle -= Math.toRadians(0.2);
+      break;
+    case 1:
+      actual.aTowerAngle -= Math.toRadians(0.2);
+      break;
+    case 2:
+      actual.aTowerAngle -= Math.toRadians(0.2);
+      break;
+    }
+    actual.CalculateFromAngles();
+    calculateErrors();
   } else if (key == 'a') {
     actual.bedNormal.d += 0.025;
     calculateErrors();
   } else if (key == 'z') {
     actual.bedNormal.d -= 0.025;
     calculateErrors();
+  } else if (key == 'p') {
+    // Do z-probe calibration
+    DavidCrockerCalibration c = new DavidCrockerCalibration(); //<>//
+    c.config = theoretical;
+    c.doDeltaCalibration(6);
+    calculateErrors();
   } else if (key == CODED) {
     Location loc;
+    boolean handled = false;
     switch (selectedTower) {
     case 0: 
       loc = actual.aTowerLocation;
@@ -224,18 +319,21 @@ void keyPressed() {
       break;
     }
     if (keyCode == UP) {
+      handled = true;
       if (loc != null) {
         loc.y += 0.1;
       } else {
         actual.rodLength += 0.025;
       }
     } else if (keyCode == DOWN) {
+      handled = true;
       if (loc != null) {
         loc.y -= 0.1;
       } else {
         actual.rodLength -= 0.025;
       }
     } else if (keyCode == LEFT) {
+      handled = true;
       if (loc != null) {
         loc.x -= 0.1;
       } else {
@@ -243,6 +341,7 @@ void keyPressed() {
         actual.CalculateFromAngles();
       }
     } else if (keyCode == RIGHT) {
+      handled = true;
       if (loc != null) {
         loc.x += 0.1;
       } else {
@@ -250,8 +349,10 @@ void keyPressed() {
         actual.CalculateFromAngles();
       }
     }
-    actual.CalculateCenter();
-    calculateErrors();
+    if (handled) {
+      actual.CalculateCenter();
+      calculateErrors();
+    }
   }
 }
 
@@ -329,22 +430,22 @@ class GCodeLayer {
   PShape layerShape;
   int currentPath;
   int currentPoint;
-  
+
   GCodeLayer() {
     this.extrudePaths = new ArrayList<ExtrudePath>();
     this.shapes = new ArrayList<PShape>();
     reset();
   }
-  
+
   void reset() {
     this.currentPath = 0;
     this.currentPoint = 0;
   }
-  
+
   void addPath(ExtrudePath path) {
-    this.extrudePaths.add(path); //<>//
+    this.extrudePaths.add(path);
   }
-  
+
   double getLayerHeight() {
     if (this.extrudePaths.size() == 0) {
       return 0;
@@ -352,7 +453,7 @@ class GCodeLayer {
       return this.extrudePaths.get(this.extrudePaths.size()-1).points.get(0).z;
     }
   }
-  
+
   boolean nextPoint() {
     this.currentPoint++;
     if (this.extrudePaths.get(this.currentPath).points.size() <= this.currentPoint) {
@@ -361,7 +462,7 @@ class GCodeLayer {
     }
     return !(this.currentPath < this.extrudePaths.size());
   }
-  
+
   // Builds all the shapes for this layer
   void buildShapes() {
     Location lastPoint = new Location();
@@ -383,13 +484,13 @@ class GCodeLayer {
         lastPoint = p.points.get(p.points.size()-1);
       }
     }
-    
+
     this.layerShape = createShape(GROUP);
     for (PShape s : this.shapes) {
       this.layerShape.addChild(s);
     }
   }
-  
+
   // Draws the current path, up to the current point.
   // Returns the current point in the path.
   Location drawPath(Location lastPoint) {
@@ -411,7 +512,7 @@ class GCodeLayer {
     endShape();
     return path.points.get(this.currentPoint);
   }
-  
+
   // Draws this layer up to the current point in the current path.
   // Returns the last point drawn.
   Location drawLayer(Location lastPoint) {
@@ -431,15 +532,15 @@ class GCodeLayer {
     }
     return lastPoint;
   }
-  
+
   // Draws all shapes in this layer
   Location drawLayer() {
     shape(this.layerShape);
     /*
     for (PShape s : shapes) {
-      shape(s);
-    }
-    */
+     shape(s);
+     }
+     */
     ExtrudePath path = extrudePaths.get(extrudePaths.size()-1);
     return path.points.get(path.points.size()-1);
   }
@@ -457,7 +558,7 @@ class GCode {
     this.deltaConfig = deltaConfig;
     reset();
   }
-  
+
   void reset() { 
     this.currentLayer = 0;
   }
@@ -484,7 +585,7 @@ class GCode {
     } else {
       currentHeight = cLayer.getLayerHeight();
     }
-    
+
     Location lastPoint = deltaConfig.effectorLocation;
     for (int i = 0; i < this.currentLayer; i++) {
       GCodeLayer layer = this.layers.get(i);
@@ -495,12 +596,12 @@ class GCode {
       lastPoint = layer.drawLayer();
       println("drawing layer: " + layer.getLayerHeight());
     }
-    
+
     if (cLayer != null) {
       stroke(200);
       lastPoint = cLayer.drawLayer(lastPoint);
     }
-    
+
     deltaConfig.effectorLocation.x = lastPoint.x;
     deltaConfig.effectorLocation.y = lastPoint.y;
     deltaConfig.effectorLocation.z = lastPoint.z;
@@ -516,7 +617,7 @@ class GCode {
     println("Adding layers: 0");
     GCodeLayer currentLayer = new GCodeLayer();
     this.layers.add(currentLayer);
-    
+
     ExtrudePath currentPath = new ExtrudePath();
     BufferedReader reader = createReader(this.filename);
     String line;
@@ -561,7 +662,7 @@ class GCode {
               this.layers.add(currentLayer);
               currentPath = new ExtrudePath();
             }
-            
+
             currentPath.addPoint(effector);
             lastLocation = effector;
           } else if (token.equals("G1") || token.equals("G0")) {
@@ -599,7 +700,7 @@ class GCode {
                 }
               }
             }
-            
+
             if (extruder == 0 && (currentPath.isExtruding || currentPath.isRetracting)) {
               if (lastLocation.z != nextLocation.z) {
                 currentLayer = new GCodeLayer();
@@ -645,6 +746,492 @@ class GCode {
     currentLayer.addPath(currentPath);
     for (GCodeLayer layer : this.layers) {
       layer.buildShapes();
+    }
+  }
+}
+
+class FixedVector {
+  double[] data;
+
+  FixedVector(int size) {
+    this.data = new double[size];
+  }
+
+  void debug(String title) {
+    print(title + ":");
+    for (int i = 0; i < this.data.length; i++) {
+      if (i != 0) {
+        print(",");
+      }
+      print(this.data[i]);
+    }
+    println();
+  }
+}
+
+class FixedMatrix {
+  double[][] data;
+
+  FixedMatrix(int rows, int columns) {
+    this.data = new double[rows][columns];
+  }
+
+  void swapRows(int i, int j) {
+    double[] rowI = this.data[i];
+    this.data[i] = data[j];
+    this.data[j] = rowI;
+  }
+
+  void gaussJordan(FixedVector solution, int numRows) {
+    for (int i = 0; i < numRows; ++i) {
+      double vmax = Math.abs(this.data[i][i]);
+      for (int j = i+1; j < this.data.length; ++j) {
+        double rmax = Math.abs(this.data[j][i]);
+        if (rmax > vmax) {
+          swapRows(i, j);
+          vmax = rmax;
+        }
+      }
+
+      double v = this.data[i][i];
+      for (int j = 0; j < i; j++) {
+        double factor = this.data[j][i] / v;
+        this.data[j][i] = 0;
+        for (int k = i+1; k <= numRows; ++k) {
+          this.data[j][k] -= this.data[i][k] * factor;
+        }
+      }
+
+      for (int j = i+1; j < numRows; ++j) {
+        double factor = this.data[j][i] / v;
+        this.data[j][i] = 0;
+        for (int k = i+1; k <= numRows; ++k) {
+          this.data[j][k] -= this.data[i][k] * factor;
+        }
+      }
+    }
+
+    for (int i = 0; i < numRows; ++i) {
+      solution.data[i] = this.data[i][numRows] / this.data[i][i];
+    }
+  }
+
+  void debug(String title) {
+    println(title);
+    for (int i = 0; i < this.data.length; i++) {
+      for (int j = 0; j < this.data[i].length; j++) {
+        if (j != 0) {
+          print(",");
+        }
+        print(this.data[i][j]);
+      }
+      println();
+    }
+  }
+}
+
+// Xe = effector X location
+// Ye = effector Y location
+// Ze = effector Z location
+// Xa,Xb,Xc = tower A,B,C X location
+// Ya,Yb,Yc = tower A,B,C Y location
+// Za,Zb,Zc = motor A,B,C Z location
+
+// Starting with equations for circles:
+// (0a): (Xe-Xa)^2 + (Ye-Ya)^2 + (Ze-Za)^2 = RL^2
+// (0b): (Xe-Xb)^2 + (Ye-Yb)^2 + (Ze-Zb)^2 = RL^2
+// (0c): (Xe-Xc)^2 + (Ye-Yc)^2 + (Ze-Zc)^2 = RL^2
+// Intersection of towers A & B:
+// (1): Xe = ((Xb^2+Yb^2+Zb^2-Xa^2-Ya^2-Za^2)/(2*(Xb-Xa)) - Ye((Yb-Ya)/(Xb-Xa)) - Ze*((Zb-Za)/(Xb-Xa))
+// (2): Xe = K1 - K2*Ye - K3*Ze
+// Intersection of towers B & C:
+// (3): Xe = ((Xc^2+Yc^2+Zc^2-Xb^2-Yb^2-Zb^2)/(2*(Xc-Xb)) - Ye((Yc-Yb)/(Xc-Xb)) - Ze*((Zc-Zb)/(Xc-Xb))
+// (4): Xe = L1 - L2*Ye - L3*Ze
+// Intersection of both intersections
+// (5): Ye = Ze*(K3-L3)/(L2-K2) + (L1-K1)/(L2-K2)
+// (6): Ye = A1*Ze + B1
+// Substituting (5) for Ye in (2):
+// (7): Xe = Ze*(-K2*A1-K3) + (K1-K2*B1)
+// (8): Xe = A2*Ze + B2
+// Substituting (8) and (6) into (0a):
+// (9): (A1^2+A2^2+1)*Ze^2 + (2*A1*(B1-Yb)+2*A2*(B2-Xb)-2*Zb)*Ze + ((B2-Xb)^2+(B1-Yb)^2)+Zb^2-RL^2) = 0
+// (10): A3*Ze^2 + B3*Ze + C3 = 0
+// (11): Ze = (-B3 +- sqrt(B3^2 - 4*A3*C3)) / (2*A3)
+class DanKirkpatrickDeltaTransform implements DeltaTransform {
+  DeltaConfig config;
+
+  void recalc(DeltaConfig config) {
+    this.config = config;
+  }
+
+  Location transform(Location effector, Location motors) {
+    if (motors == null) {
+      motors = new Location();
+    }
+    motors.x = effector.z + Math.sqrt(sq(config.rodLength) - 
+      (config.aTowerLocation.x - effector.x)*(config.aTowerLocation.x - effector.x) - 
+      (config.aTowerLocation.y - effector.y)*(config.aTowerLocation.y - effector.y));
+    motors.y = effector.z + Math.sqrt(sq(config.rodLength) - 
+      (config.bTowerLocation.x - effector.x)*(config.bTowerLocation.x - effector.x) - 
+      (config.bTowerLocation.y - effector.y)*(config.bTowerLocation.y - effector.y));
+    motors.z = effector.z + Math.sqrt(sq(config.rodLength) - 
+      (config.cTowerLocation.x - effector.x)*(config.cTowerLocation.x - effector.x) - 
+      (config.cTowerLocation.y - effector.y)*(config.cTowerLocation.y - effector.y));
+    return motors;
+  }
+
+  Location inverseTransform(Location motors, Location effector) {
+    if (effector == null) {
+      effector = new Location();
+    }
+    double k1 = (sq(config.bTowerLocation.x)+sq(config.bTowerLocation.y)+sq(motors.y)
+      -sq(config.aTowerLocation.x)-sq(config.aTowerLocation.y)-sq(motors.x)) 
+      / (2*(config.bTowerLocation.x-config.aTowerLocation.x));
+    double k2 = (config.bTowerLocation.y-config.aTowerLocation.y)/(config.bTowerLocation.x-config.aTowerLocation.x);                 
+    double k3 = (motors.y-motors.x)/(config.bTowerLocation.x-config.aTowerLocation.x);
+    double l1 = (sq(config.cTowerLocation.x)+sq(config.cTowerLocation.y)+sq(motors.z)
+      -sq(config.bTowerLocation.x)-sq(config.bTowerLocation.y)-sq(motors.y)) 
+      / (2*(config.cTowerLocation.x-config.bTowerLocation.x));
+    double l2 = (config.cTowerLocation.y-config.bTowerLocation.y)/(config.cTowerLocation.x-config.bTowerLocation.x);                 
+    double l3 = (motors.z-motors.y)/(config.cTowerLocation.x-config.bTowerLocation.x);
+    double a1 = (k3 - l3) / (l2 - k2); 
+    double b1 = (l1 - k1) / (l2 - k2);
+    double a2 = (-k2 * a1 - k3);
+    double b2 = (k1 - k2 * b1);
+    double a3 = sq(a1) + sq(a2) + 1;
+    double b3 = 2*a1*(b1-config.bTowerLocation.y)+2*a2*(b2-config.bTowerLocation.x)-2*motors.y;
+    double c3 = sq(b2-config.bTowerLocation.x) + sq(b1-config.bTowerLocation.y) + sq(motors.y) - sq(config.rodLength);
+    double z1 = (-b3 + Math.sqrt(sq(b3) - 4*a3*c3)) / (2*a3);
+    double x1 = a2 * z1 + b2;
+    double y1 = a1 * z1 + b1;
+    double z2 = (-b3 - Math.sqrt(sq(b3) - 4*a3*c3)) / (2*a3);
+    double x2 = a2 * z2 + b2;
+    double y2 = a1 * z2 + b1;
+
+    if (z1 > z2) {
+      effector.x = x2;
+      effector.y = y2;
+      effector.z = z2;
+    } else {
+      effector.x = x1;
+      effector.y = y1;
+      effector.z = z1;
+    }
+    return effector;
+  }
+}
+
+interface DeltaTransform {
+  void recalc(DeltaConfig config);
+  Location transform(Location effector, Location motors);
+  Location inverseTransform(Location motors, Location effector);
+}
+
+class DavidCrockerDeltaTransform implements DeltaTransform {
+  DeltaConfig config;
+  double xAB;
+  double xBC;
+  double xCA;
+  double yAB;
+  double yBC;
+  double yCA;
+  double coreFa;
+  double coreFb;
+  double coreFc;
+  double q;
+  double q2;
+  double d2;
+
+  void recalc(DeltaConfig config) {
+    this.config = config;
+
+    xAB = config.bTowerLocation.x - config.aTowerLocation.x;
+    xBC = config.cTowerLocation.x - config.bTowerLocation.x;
+    xCA = config.aTowerLocation.x - config.cTowerLocation.x;
+    yAB = config.bTowerLocation.y - config.aTowerLocation.y;
+    yBC = config.cTowerLocation.y - config.bTowerLocation.y;
+    yCA = config.aTowerLocation.y - config.cTowerLocation.y;
+    coreFa = sq(config.aTowerLocation.x) + sq(config.aTowerLocation.y);
+    coreFb = sq(config.bTowerLocation.x) + sq(config.bTowerLocation.y);
+    coreFc = sq(config.cTowerLocation.x) + sq(config.cTowerLocation.y);
+    q = 2 * (xCA * yAB - xAB * yCA);
+    q2 = sq(q);
+    d2 = sq(config.rodLength);
+  }
+
+  // Tranform an effector positon to a motor position
+  Location transform(Location effector, Location motors) {
+    if (motors == null) {
+      motors = new Location();
+    }
+
+    motors.x = effector.z + Math.sqrt(this.d2 - sq(effector.x - config.aTowerLocation.x) - sq(effector.y - config.aTowerLocation.y));
+    motors.y = effector.z + Math.sqrt(this.d2 - sq(effector.x - config.bTowerLocation.x) - sq(effector.y - config.bTowerLocation.y));
+    motors.z = effector.z + Math.sqrt(this.d2 - sq(effector.x - config.cTowerLocation.x) - sq(effector.y - config.cTowerLocation.y));
+
+    return effector;
+  }
+
+  // Tranform a motor position to an effecto position
+  Location inverseTransform(Location motors, Location effector) {
+    if (effector == null) {
+      effector = new Location();
+    }
+
+    double fA = coreFa + sq(motors.x);
+    double fB = coreFb + sq(motors.y);
+    double fC = coreFc + sq(motors.z);
+    double p = (xBC * fA) + (xCA * fB) + (xAB * fC);
+    double s = (yBC * fA) + (yCA * fB) + (yAB * fC);
+    double r = 2 * ((xBC * motors.x) + (xCA * motors.y) + (xAB * motors.z));
+    double u = 2 * ((yBC * motors.x) + (yCA * motors.y) + (yAB * motors.z));
+    double r2 = sq(r);
+    double u2 = sq(u);
+    double a = u2 + r2 + q2;
+    double minusHalfB = s*u + p*r + motors.x*q2 + config.aTowerLocation.x*u*q - config.aTowerLocation.y*r*q;
+    double c = sq(s+config.aTowerLocation.x*q) + sq(p-config.aTowerLocation.y*q) + (sq(motors.x) - d2)*q2;
+
+    effector.z = (minusHalfB - Math.sqrt(sq(minusHalfB) - a*c)) / a;
+    effector.x = (u*effector.z - s) / q;
+    effector.y = (p - r*effector.z) / q;
+
+    return effector;
+  }
+
+  /**
+   * param: 0: Tower A endstop correction
+   *        1: Tower B endstop correction
+   *        2: Tower C endstop correction
+   *        3: Delta radius correction
+   *        4: Tower A angle correction
+   *        5: Tower B angle correction
+   *        6: Rod Length correction
+   * motors: The Z location of the motors
+   */
+  double computeDerivative(int param, Location motors) {
+    double perturb = 0.2;
+    double zLo = 0;
+    double zHi = 0;
+    double original;
+    Location effector = new Location();
+    switch (param) {
+    case 0:
+      original = motors.x;
+      motors.x = original + perturb;
+      inverseTransform(motors, effector);
+      zHi = effector.z;
+      motors.x = original - perturb;
+      inverseTransform(motors, effector);
+      zLo = effector.z;
+      motors.x = original;
+      break;
+    case 1:
+      original = motors.y;
+      motors.y = original + perturb;
+      inverseTransform(motors, effector);
+      zHi = effector.z;
+      motors.y = original - perturb;
+      inverseTransform(motors, effector);
+      zLo = effector.z;
+      motors.y = original;
+      break;
+    case 2:
+      original = motors.z;
+      motors.z = original + perturb;
+      inverseTransform(motors, effector);
+      zHi = effector.z;
+      motors.z = original - perturb;
+      inverseTransform(motors, effector);
+      zLo = effector.z;
+      motors.z = original;
+      break;
+    case 3:
+      original = config.deltaRadius;
+      config.deltaRadius = original + perturb;
+      config.CalculateFromAngles();
+      recalc(config);
+      inverseTransform(motors, effector);
+      zHi = effector.z;
+      config.deltaRadius = original - perturb;
+      config.CalculateFromAngles();
+      recalc(config);
+      inverseTransform(motors, effector);
+      zLo = effector.z;
+      config.deltaRadius = original;
+      config.CalculateFromAngles();
+      recalc(config);
+      break;
+    case 4:
+      original = config.aTowerAngle;
+      config.aTowerAngle = original + Math.toRadians(perturb);
+      config.CalculateFromAngles();
+      recalc(config);
+      inverseTransform(motors, effector);
+      zHi = effector.z;
+      config.aTowerAngle = original - Math.toRadians(perturb);
+      config.CalculateFromAngles();
+      recalc(config);
+      inverseTransform(motors, effector);
+      zLo = effector.z;
+      config.aTowerAngle = original;
+      config.CalculateFromAngles();
+      recalc(config);
+      break;
+    case 5:
+      original = config.bTowerAngle;
+      config.bTowerAngle = original + Math.toRadians(perturb);
+      config.CalculateFromAngles();
+      recalc(config);
+      inverseTransform(motors, effector);
+      zHi = effector.z;
+      config.bTowerAngle = original - Math.toRadians(perturb);
+      config.CalculateFromAngles();
+      recalc(config);
+      inverseTransform(motors, effector);
+      zLo = effector.z;
+      config.bTowerAngle = original;
+      config.CalculateFromAngles();
+      recalc(config);
+      break;
+    case 6:
+      original = config.rodLength;
+      config.rodLength = original + perturb;
+      //config.CalculateCenter();
+      recalc(config);
+      inverseTransform(motors, effector);
+      zHi = effector.z;
+      config.rodLength = original - perturb;
+      //config.CalculateCenter();
+      recalc(config);
+      inverseTransform(motors, effector);
+      zLo = effector.z;
+      config.rodLength = original;
+      //config.CalculateCenter();
+      recalc(config);
+      break;
+    }
+    return (zHi - zLo) / (2 * perturb);
+  }
+}
+
+class DavidCrockerCalibration {
+  DeltaConfig config;
+
+  void doDeltaCalibration(int numFactors) {
+    int numDeltaFactors = 7;
+    int numPoints = testPoints.size();
+
+    if (numFactors != 3 && numFactors != 4 && numFactors != 6 && numFactors != 7) {
+      println("ERROR!!!  only 3, 4, 6, or 7 factors supported for calibration");
+      return;
+    }
+
+    double corrections[] = new double[numPoints];
+    double initialSumOfSquares = 0;
+    for (int i = 0; i < numPoints; ++i) {
+      corrections[i] = 0;
+      initialSumOfSquares += sq(heightErrors.get(i).z);
+    }
+
+    int iteration = 0;
+    double expectedRmsError;
+    FixedMatrix derivativeMatrix = new FixedMatrix(numPoints, numDeltaFactors);
+    FixedMatrix normalMatrix = new FixedMatrix(numDeltaFactors, numDeltaFactors+1);
+    FixedVector solution = new FixedVector(numDeltaFactors);
+    FixedVector residuals = new FixedVector(numPoints);
+    FixedVector expectedResiduals = new FixedVector(numPoints);
+    do {
+      for (int i = 0; i < numPoints; ++i) {
+        for (int j = 0; j < numFactors; ++j) {
+          derivativeMatrix.data[i][j] = ((DavidCrockerDeltaTransform)this.config.transform).computeDerivative(j, motorTestHeights.get(i));
+        }
+      }
+      derivativeMatrix.debug("Derivative Matrix");
+
+      for (int i = 0; i < numFactors; ++i) {
+        for (int j = 0; j < numFactors; ++j) {
+          double temp = derivativeMatrix.data[0][i] * derivativeMatrix.data[0][j];
+          for (int k = 1; k < numPoints; k++) {
+            temp += derivativeMatrix.data[k][i] * derivativeMatrix.data[k][j];
+          }
+          normalMatrix.data[i][j] = temp;
+        }
+        double temp = derivativeMatrix.data[0][i] * -(heightErrors.get(i).z + corrections[i]);
+        for (int k = 1; k < numPoints; ++k) {
+          temp += derivativeMatrix.data[k][i] * -(heightErrors.get(k).z + corrections[k]);
+        }
+        normalMatrix.data[i][numFactors] = temp;
+      }
+      normalMatrix.debug("Normal matrix:");
+      normalMatrix.gaussJordan(solution, numFactors);
+      normalMatrix.debug("Solved matrix:");
+      solution.debug("Solution");
+
+      for (int i = 0; i < numPoints; ++i) {
+        residuals.data[i] = testPoints.get(i).z;
+        for (int j = 0; j < numFactors; j++) {
+          residuals.data[i] += solution.data[j] * derivativeMatrix.data[i][j];
+        }
+      }
+      residuals.debug("Actual Residuals");
+
+      // Apply solution to theoretical delta config
+      applySolution(solution, numFactors);
+
+      double sumOfSquares = 0;
+      Location motors = new Location();
+      Location effector = new Location();
+      for (int i = 0; i < numPoints; i++) {
+        Location te = testPoints.get(i);
+        Location tm = motorTestHeights.get(i);
+        motors.x = tm.x + solution.data[0];
+        motors.y = tm.y + solution.data[1];
+        motors.z = tm.z + solution.data[2];
+        theoretical.transform.inverseTransform(motors, effector);
+        corrections[i] = effector.z;
+        expectedResiduals.data[i] = te.z + effector.z;
+        sumOfSquares += sq(expectedResiduals.data[i]);
+      }
+
+      expectedRmsError = Math.sqrt(sumOfSquares / numPoints);
+      expectedResiduals.debug("Expected probe error");
+
+      iteration++;
+      // Calculate expected probe errors
+    } while (iteration < 2);
+    
+    config.debug("Current printer parameters");
+    println("Calibrated " + numFactors + 
+            " factors using " + numPoints + 
+            " points, deviation before: " + Math.sqrt(initialSumOfSquares/numPoints) + 
+            " after:" + expectedRmsError);
+  }
+
+  void applySolution(FixedVector solution, int numFactors) {
+    for (int i = 0; i < numFactors; i++) {
+      switch (i) {
+      case 0:
+        this.config.aEndstopOffset += solution.data[0];
+        break;
+      case 1:
+        this.config.bEndstopOffset += solution.data[1];
+        break;
+      case 2:
+        this.config.cEndstopOffset += solution.data[2];
+        break;
+      case 3:
+        this.config.deltaRadius += solution.data[3];
+        break;
+      case 4:
+        this.config.aTowerAngle += Math.toRadians(solution.data[4]);
+        break;
+      case 5:
+        this.config.bTowerAngle += Math.toRadians(solution.data[5]);
+        break;
+      case 6:
+        this.config.rodLength += Math.toRadians(solution.data[6]);
+        break;
+      }
     }
   }
 }
@@ -697,8 +1284,29 @@ class DeltaConfig {
   // Normal vector of bed
   Vector bedNormal;
 
+  DeltaTransform transform;
+
+  void debug(String title) {
+    println("  DELTA CONFIG: " + title);
+    println("--------------");
+    println("Tower A: angle: " + Math.toDegrees(this.aTowerAngle));
+    println("             x: " + this.aTowerLocation.x);
+    println("             y: " + this.aTowerLocation.y);
+    println("       endstop: " + this.aEndstopOffset);
+    println("Tower B: angle: " + Math.toDegrees(this.bTowerAngle));
+    println("             x: " + this.bTowerLocation.x);
+    println("             y: " + this.bTowerLocation.y);
+    println("       endstop: " + this.bEndstopOffset);
+    println("Tower C: angle: " + Math.toDegrees(this.cTowerAngle));
+    println("             x: " + this.cTowerLocation.x);
+    println("             y: " + this.cTowerLocation.y);
+    println("       endstop: " + this.cEndstopOffset);
+    println("  Delta radius: " + this.deltaRadius);
+    println("    Rod length: " + this.rodLength);
+  }
+
   DeltaConfig() {
-    this.rodLength = 215;
+    this.rodLength = 220;
     this.deltaRadius = 110;
     this.aTowerHeight = 500;
     this.bTowerHeight = 500;
@@ -706,9 +1314,9 @@ class DeltaConfig {
     this.aEndstopOffset = 0;
     this.bEndstopOffset = 0;
     this.cEndstopOffset = 0;
-    this.aTowerAngle = 0;
+    this.aTowerAngle = radians(240);
     this.bTowerAngle = radians(120);
-    this.cTowerAngle = radians(240);
+    this.cTowerAngle = 0;
     this.bedNormal = new Vector(0, 0, 1);
 
     this.aTowerLocation = new Location();
@@ -726,6 +1334,8 @@ class DeltaConfig {
     this.motorHeight = 10;                    // height of motor plate
     this.motorOffset = 10;                    // depth of motor plate; offset of towers from front of plate
     this.effectorOffset = 25;                 // distance from effector center to rods
+
+    this.transform = new DavidCrockerDeltaTransform();
 
     CalculateFromAngles();
     CalculateCenter();
@@ -820,7 +1430,7 @@ class DeltaConfig {
       pushMatrix();
       translate(0, 0, (float)(l.z * zMultiplier));
       setHSVProbeColor(l.z, hueFactor);
-      ellipse((float)l.x, (float)l.y, 5, 5);
+      ellipse((float)l.x, (float)l.y, 15, 15);
       popMatrix();
     }
     colorMode(RGB);
@@ -934,6 +1544,7 @@ class DeltaConfig {
     rotateX(xAngle);
     rotateZ(zAngle);
 
+    scale(1, -1, 1);
     drawBed();
     drawHSVProbePoints(heightErrors);
     drawTower(this.aTowerLocation, this.aTowerHeight, this.aTowerAngle, (selectedTower == 0));
@@ -947,7 +1558,7 @@ class DeltaConfig {
     drawTowerRods(this.aTowerLocation, this.motorsLocation.x, this.aTowerAngle);
     drawTowerRods(this.bTowerLocation, this.motorsLocation.y, this.bTowerAngle);
     drawTowerRods(this.cTowerLocation, this.motorsLocation.z, this.cTowerAngle);
-    
+
     popMatrix();
   }
 
@@ -964,6 +1575,7 @@ class DeltaConfig {
     this.centerLocation.x = 0;
     this.centerLocation.y = 0;
 
+    this.transform.recalc(this);
     println("Calculating tower locations:");
     println("Rod Length: " + this.rodLength);
     println("Delta radius: " + this.deltaRadius);
@@ -998,12 +1610,13 @@ class DeltaConfig {
     } else {
       this.bTowerAngle = Math.PI + Math.atan((this.bTowerLocation.y - this.centerLocation.y) / (this.bTowerLocation.x - this.centerLocation.x));
     }
-    if (this.bTowerLocation.x > this.centerLocation.x) {
+    if (this.cTowerLocation.x > this.centerLocation.x) {
       this.cTowerAngle = Math.atan((this.cTowerLocation.y - this.centerLocation.y) / (this.cTowerLocation.x - this.centerLocation.x));
     } else {
       this.cTowerAngle = Math.PI + Math.atan((this.cTowerLocation.y - this.centerLocation.y) / (this.cTowerLocation.x - this.centerLocation.x));
     }
 
+    transform.recalc(this);
     println("Calculating center:");
     println("Center: (" + this.centerLocation.x + ", " + this.centerLocation.y + ")");
     println("Radius: " + this.deltaRadius);
@@ -1033,91 +1646,70 @@ class DeltaConfig {
 
   // Given an effector location, calculate the motor heights
   Location CalculateMotorHeights(Location effector, Location motorHeights) {
+    return this.transform.transform(effector, motorHeights);
+  }
+  /*
     if (motorHeights == null) {
-      motorHeights = new Location();
-    }
-    motorHeights.x = effector.z + Math.sqrt((this.rodLength*this.rodLength) - 
-      (this.aTowerLocation.x - effector.x)*(this.aTowerLocation.x - effector.x) - 
-      (this.aTowerLocation.y - effector.y)*(this.aTowerLocation.y - effector.y));
-    motorHeights.y = effector.z + Math.sqrt((this.rodLength*this.rodLength) - 
-      (this.bTowerLocation.x - effector.x)*(this.bTowerLocation.x - effector.x) - 
-      (this.bTowerLocation.y - effector.y)*(this.bTowerLocation.y - effector.y));
-    motorHeights.z = effector.z + Math.sqrt((this.rodLength*this.rodLength) - 
-      (this.cTowerLocation.x - effector.x)*(this.cTowerLocation.x - effector.x) - 
-      (this.cTowerLocation.y - effector.y)*(this.cTowerLocation.y - effector.y));
-    return motorHeights;
-  }
+   motorHeights = new Location();
+   }
+   motorHeights.x = effector.z + Math.sqrt((this.rodLength*this.rodLength) - 
+   (this.aTowerLocation.x - effector.x)*(this.aTowerLocation.x - effector.x) - 
+   (this.aTowerLocation.y - effector.y)*(this.aTowerLocation.y - effector.y));
+   motorHeights.y = effector.z + Math.sqrt((this.rodLength*this.rodLength) - 
+   (this.bTowerLocation.x - effector.x)*(this.bTowerLocation.x - effector.x) - 
+   (this.bTowerLocation.y - effector.y)*(this.bTowerLocation.y - effector.y));
+   motorHeights.z = effector.z + Math.sqrt((this.rodLength*this.rodLength) - 
+   (this.cTowerLocation.x - effector.x)*(this.cTowerLocation.x - effector.x) - 
+   (this.cTowerLocation.y - effector.y)*(this.cTowerLocation.y - effector.y));
+   return motorHeights;
+   }
+   */
 
-  double sq(double value) {
-    return value * value;
-  }
 
-  // Xe = effector X location
-  // Ye = effector Y location
-  // Ze = effector Z location
-  // Xa,Xb,Xc = tower A,B,C X location
-  // Ya,Yb,Yc = tower A,B,C Y location
-  // Za,Zb,Zc = motor A,B,C Z location
-
-  // Starting with equations for circles:
-  // (0a): (Xe-Xa)^2 + (Ye-Ya)^2 + (Ze-Za)^2 = RL^2
-  // (0b): (Xe-Xb)^2 + (Ye-Yb)^2 + (Ze-Zb)^2 = RL^2
-  // (0c): (Xe-Xc)^2 + (Ye-Yc)^2 + (Ze-Zc)^2 = RL^2
-  // Intersection of towers A & B:
-  // (1): Xe = ((Xb^2+Yb^2+Zb^2-Xa^2-Ya^2-Za^2)/(2*(Xb-Xa)) - Ye((Yb-Ya)/(Xb-Xa)) - Ze*((Zb-Za)/(Xb-Xa))
-  // (2): Xe = K1 - K2*Ye - K3*Ze
-  // Intersection of towers B & C:
-  // (3): Xe = ((Xc^2+Yc^2+Zc^2-Xb^2-Yb^2-Zb^2)/(2*(Xc-Xb)) - Ye((Yc-Yb)/(Xc-Xb)) - Ze*((Zc-Zb)/(Xc-Xb))
-  // (4): Xe = L1 - L2*Ye - L3*Ze
-  // Intersection of both intersections
-  // (5): Ye = Ze*(K3-L3)/(L2-K2) + (L1-K1)/(L2-K2)
-  // (6): Ye = A1*Ze + B1
-  // Substituting (5) for Ye in (2):
-  // (7): Xe = Ze*(-K2*A1-K3) + (K1-K2*B1)
-  // (8): Xe = A2*Ze + B2
-  // Substituting (8) and (6) into (0a):
-  // (9): (A1^2+A2^2+1)*Ze^2 + (2*A1*(B1-Yb)+2*A2*(B2-Xb)-2*Zb)*Ze + ((B2-Xb)^2+(B1-Yb)^2)+Zb^2-RL^2) = 0
-  // (10): A3*Ze^2 + B3*Ze + C3 = 0
-  // (11): Ze = (-B3 +- sqrt(B3^2 - 4*A3*C3)) / (2*A3)
   Location CalculateEffectorLocation(Location motorHeights, Location effector) {
-    if (effector == null) {
-      effector = new Location();
-    }
-    double k1 = (sq(this.bTowerLocation.x)+sq(this.bTowerLocation.y)+sq(motorHeights.y)
-      -sq(this.aTowerLocation.x)-sq(this.aTowerLocation.y)-sq(motorHeights.x)) 
-      / (2*(this.bTowerLocation.x-this.aTowerLocation.x));
-    double k2 = (this.bTowerLocation.y-this.aTowerLocation.y)/(this.bTowerLocation.x-this.aTowerLocation.x);                 
-    double k3 = (motorHeights.y-motorHeights.x)/(this.bTowerLocation.x-this.aTowerLocation.x);
-    double l1 = (sq(this.cTowerLocation.x)+sq(this.cTowerLocation.y)+sq(motorHeights.z)
-      -sq(this.bTowerLocation.x)-sq(this.bTowerLocation.y)-sq(motorHeights.y)) 
-      / (2*(this.cTowerLocation.x-this.bTowerLocation.x));
-    double l2 = (this.cTowerLocation.y-this.bTowerLocation.y)/(this.cTowerLocation.x-this.bTowerLocation.x);                 
-    double l3 = (motorHeights.z-motorHeights.y)/(this.cTowerLocation.x-this.bTowerLocation.x);
-    double a1 = (k3 - l3) / (l2 - k2); 
-    double b1 = (l1 - k1) / (l2 - k2);
-    double a2 = (-k2 * a1 - k3);
-    double b2 = (k1 - k2 * b1);
-    double a3 = sq(a1) + sq(a2) + 1;
-    double b3 = 2*a1*(b1-this.bTowerLocation.y)+2*a2*(b2-this.bTowerLocation.x)-2*motorHeights.y;
-    double c3 = sq(b2-this.bTowerLocation.x) + sq(b1-this.bTowerLocation.y) + sq(motorHeights.y) - sq(this.rodLength);
-    double z1 = (-b3 + Math.sqrt(sq(b3) - 4*a3*c3)) / (2*a3);
-    double x1 = a2 * z1 + b2;
-    double y1 = a1 * z1 + b1;
-    double z2 = (-b3 - Math.sqrt(sq(b3) - 4*a3*c3)) / (2*a3);
-    double x2 = a2 * z2 + b2;
-    double y2 = a1 * z2 + b1;
-
-    if (z1 > z2) {
-      effector.x = x2;
-      effector.y = y2;
-      effector.z = z2;
-    } else {
-      effector.x = x1;
-      effector.y = y1;
-      effector.z = z1;
-    }
-    return effector;
+    return this.transform.inverseTransform(motorHeights, effector);
   }
+  /*
+    
+   if (effector == null) {
+   effector = new Location();
+   }
+   double k1 = (sq(this.bTowerLocation.x)+sq(this.bTowerLocation.y)+sq(motorHeights.y)
+   -sq(this.aTowerLocation.x)-sq(this.aTowerLocation.y)-sq(motorHeights.x)) 
+   / (2*(this.bTowerLocation.x-this.aTowerLocation.x));
+   double k2 = (this.bTowerLocation.y-this.aTowerLocation.y)/(this.bTowerLocation.x-this.aTowerLocation.x);                 
+   double k3 = (motorHeights.y-motorHeights.x)/(this.bTowerLocation.x-this.aTowerLocation.x);
+   double l1 = (sq(this.cTowerLocation.x)+sq(this.cTowerLocation.y)+sq(motorHeights.z)
+   -sq(this.bTowerLocation.x)-sq(this.bTowerLocation.y)-sq(motorHeights.y)) 
+   / (2*(this.cTowerLocation.x-this.bTowerLocation.x));
+   double l2 = (this.cTowerLocation.y-this.bTowerLocation.y)/(this.cTowerLocation.x-this.bTowerLocation.x);                 
+   double l3 = (motorHeights.z-motorHeights.y)/(this.cTowerLocation.x-this.bTowerLocation.x);
+   double a1 = (k3 - l3) / (l2 - k2); 
+   double b1 = (l1 - k1) / (l2 - k2);
+   double a2 = (-k2 * a1 - k3);
+   double b2 = (k1 - k2 * b1);
+   double a3 = sq(a1) + sq(a2) + 1;
+   double b3 = 2*a1*(b1-this.bTowerLocation.y)+2*a2*(b2-this.bTowerLocation.x)-2*motorHeights.y;
+   double c3 = sq(b2-this.bTowerLocation.x) + sq(b1-this.bTowerLocation.y) + sq(motorHeights.y) - sq(this.rodLength);
+   double z1 = (-b3 + Math.sqrt(sq(b3) - 4*a3*c3)) / (2*a3);
+   double x1 = a2 * z1 + b2;
+   double y1 = a1 * z1 + b1;
+   double z2 = (-b3 - Math.sqrt(sq(b3) - 4*a3*c3)) / (2*a3);
+   double x2 = a2 * z2 + b2;
+   double y2 = a1 * z2 + b1;
+   
+   if (z1 > z2) {
+   effector.x = x2;
+   effector.y = y2;
+   effector.z = z2;
+   } else {
+   effector.x = x1;
+   effector.y = y1;
+   effector.z = z1;
+   }
+   return effector;
+   }
+   */
 }
 
 class Point {
