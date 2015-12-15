@@ -18,6 +18,14 @@ synchronized public void paramsDraw(PApplet appc, GWinData data) { //_CODE_:para
   appc.background(230);
 } //_CODE_:paramsWindow:242215:
 
+synchronized public void paramsMouse(PApplet appc, GWinData data, MouseEvent mevent) { //_CODE_:paramsWindow:476217:
+  //println("paramsWindow - mouse event " + millis());
+} //_CODE_:paramsWindow:476217:
+
+synchronized public void paramsKey(PApplet appc, GWinData data, KeyEvent kevent) { //_CODE_:paramsWindow:860401:
+  println("paramsWindow - key event " + millis());
+} //_CODE_:paramsWindow:476217:
+
 public void towerAAngleChange(GTextField source, GEvent event) { //_CODE_:towerAAngleTF:786243:
   println("textfield1 - GTextField >> GEvent." + event + " @ " + millis());
 } //_CODE_:towerAAngleTF:786243:
@@ -126,6 +134,7 @@ public void probePointsDisplayedCBClicked(GCheckbox source, GEvent event) { //_C
   int newViewMode = source.isSelected()? 1 : 0;
   newViewMode += effectorErrorsCB.isSelected()? 2 : 0;
   viewMode = newViewMode;
+  redrawDelta = true;
   
   println("probePointsDisplayedCB - GCheckbox >> GEvent." + event + " @ " + millis());
 } //_CODE_:probePointsDisplayedCB:264322:
@@ -148,8 +157,10 @@ public void createGUI(){
   G4P.setGlobalColorScheme(GCScheme.BLUE_SCHEME);
   G4P.setCursor(ARROW);
   surface.setTitle("Delta Simulation");
-  paramsWindow = GWindow.getWindow(this, "Parameters", 620, 20, 600, 460, P2D);
+  paramsWindow = GWindow.getWindow(this, "Actual Delta", 620, 20, 600, 530, P2D);
   paramsWindow.addDrawHandler(this, "paramsDraw");
+  paramsWindow.addMouseHandler(this, "paramsMouse");
+  paramsWindow.addKeyHandler(this, "paramsKey");
   towerALabel = new GLabel(paramsWindow, 20, 45, 80, 20);
   towerALabel.setText("Tower A:");
   towerALabel.setTextBold();
@@ -307,6 +318,7 @@ public void createGUI(){
   zMultLabel.setTextBold();
   zMultLabel.setOpaque(false);
   zMultiplierTF = new GTextField(paramsWindow, 340, 140, 120, 30, G4P.SCROLLBARS_NONE);
+  zMultiplierTF.setPromptText("Height Multiplier");
   zMultiplierTF.setOpaque(true);
   zMultiplierTF.addEventHandler(this, "zMultiplierChange");
   errorAvgLabel = new GLabel(paramsWindow, 40, 390, 80, 20);
@@ -382,6 +394,88 @@ public void createGUI(){
   effectorErrorsCB.setOpaque(false);
   effectorErrorsCB.addEventHandler(this, "effectorErrorsCBClicked");
   effectorErrorsCB.setSelected(true);
+  differencesLabel = new GLabel(paramsWindow, 40, 440, 80, 20);
+  differencesLabel.setText("Differences");
+  differencesLabel.setTextBold();
+  differencesLabel.setOpaque(false);
+  angleDiffLabel = new GLabel(paramsWindow, 120, 440, 80, 20);
+  angleDiffLabel.setText("Angle");
+  angleDiffLabel.setTextBold();
+  angleDiffLabel.setOpaque(false);
+  xDiffLabel = new GLabel(paramsWindow, 200, 440, 80, 20);
+  xDiffLabel.setText("X");
+  xDiffLabel.setTextBold();
+  xDiffLabel.setOpaque(false);
+  yDiffLabel = new GLabel(paramsWindow, 280, 440, 80, 20);
+  yDiffLabel.setText("Y");
+  yDiffLabel.setTextBold();
+  yDiffLabel.setOpaque(false);
+  endstopDiffLabel = new GLabel(paramsWindow, 360, 440, 80, 20);
+  endstopDiffLabel.setText("Endstop");
+  endstopDiffLabel.setTextBold();
+  endstopDiffLabel.setOpaque(false);
+  towerADiffLabel = new GLabel(paramsWindow, 40, 460, 80, 20);
+  towerADiffLabel.setText("Tower A");
+  towerADiffLabel.setTextBold();
+  towerADiffLabel.setOpaque(false);
+  towerBDiffLabel = new GLabel(paramsWindow, 40, 480, 80, 20);
+  towerBDiffLabel.setText("Tower B");
+  towerBDiffLabel.setTextBold();
+  towerBDiffLabel.setOpaque(false);
+  towerCDiffLabel = new GLabel(paramsWindow, 40, 500, 80, 20);
+  towerCDiffLabel.setText("Tower C");
+  towerCDiffLabel.setTextBold();
+  towerCDiffLabel.setOpaque(false);
+  deltaRadiusDiffLabel = new GLabel(paramsWindow, 450, 440, 100, 20);
+  deltaRadiusDiffLabel.setText("Delta Radius");
+  deltaRadiusDiffLabel.setTextBold();
+  deltaRadiusDiffLabel.setOpaque(false);
+  rodLengthDiffLabel = new GLabel(paramsWindow, 460, 480, 80, 20);
+  rodLengthDiffLabel.setText("Rod Length");
+  rodLengthDiffLabel.setTextBold();
+  rodLengthDiffLabel.setOpaque(false);
+  aAngleDiffValue = new GLabel(paramsWindow, 120, 460, 80, 20);
+  aAngleDiffValue.setText("0.0");
+  aAngleDiffValue.setOpaque(false);
+  aXDiffValue = new GLabel(paramsWindow, 200, 460, 80, 20);
+  aXDiffValue.setText("0.0");
+  aXDiffValue.setOpaque(false);
+  aYDiffValue = new GLabel(paramsWindow, 280, 460, 80, 20);
+  aYDiffValue.setText("0.0");
+  aYDiffValue.setOpaque(false);
+  aEndstopDiffValue = new GLabel(paramsWindow, 360, 460, 80, 20);
+  aEndstopDiffValue.setText("0.0");
+  aEndstopDiffValue.setOpaque(false);
+  bAngleDiffValue = new GLabel(paramsWindow, 120, 480, 80, 20);
+  bAngleDiffValue.setText("0.0");
+  bAngleDiffValue.setOpaque(false);
+  bXDiffValue = new GLabel(paramsWindow, 200, 480, 80, 20);
+  bXDiffValue.setText("0.0");
+  bXDiffValue.setOpaque(false);
+  bYDiffValue = new GLabel(paramsWindow, 280, 480, 80, 20);
+  bYDiffValue.setText("0.0");
+  bYDiffValue.setOpaque(false);
+  bEndstopDiffValue = new GLabel(paramsWindow, 360, 480, 80, 20);
+  bEndstopDiffValue.setText("0.0");
+  bEndstopDiffValue.setOpaque(false);
+  cAngleDiffValue = new GLabel(paramsWindow, 120, 500, 80, 20);
+  cAngleDiffValue.setText("0.0");
+  cAngleDiffValue.setOpaque(false);
+  cXDiffValue = new GLabel(paramsWindow, 200, 500, 80, 20);
+  cXDiffValue.setText("0.0");
+  cXDiffValue.setOpaque(false);
+  cYDiffValue = new GLabel(paramsWindow, 280, 500, 80, 20);
+  cYDiffValue.setText("0.0");
+  cYDiffValue.setOpaque(false);
+  cEndstopDiffValue = new GLabel(paramsWindow, 360, 500, 80, 20);
+  cEndstopDiffValue.setText("0.0");
+  cEndstopDiffValue.setOpaque(false);
+  deltaRadiusDiffValue = new GLabel(paramsWindow, 460, 460, 80, 20);
+  deltaRadiusDiffValue.setText("0.0");
+  deltaRadiusDiffValue.setOpaque(false);
+  rodLengthDiffValue = new GLabel(paramsWindow, 460, 500, 80, 20);
+  rodLengthDiffValue.setText("0.0");
+  rodLengthDiffValue.setOpaque(false);
 }
 
 // Variable declarations 
@@ -452,3 +546,27 @@ GLabel tensorMultiplierLabel;
 GTextField tensorMultiplierTF; 
 GCheckbox probePointsDisplayedCB; 
 GCheckbox effectorErrorsCB; 
+GLabel differencesLabel; 
+GLabel angleDiffLabel; 
+GLabel xDiffLabel; 
+GLabel yDiffLabel; 
+GLabel endstopDiffLabel; 
+GLabel towerADiffLabel; 
+GLabel towerBDiffLabel; 
+GLabel towerCDiffLabel; 
+GLabel deltaRadiusDiffLabel; 
+GLabel rodLengthDiffLabel; 
+GLabel aAngleDiffValue; 
+GLabel aXDiffValue; 
+GLabel aYDiffValue; 
+GLabel aEndstopDiffValue; 
+GLabel bAngleDiffValue; 
+GLabel bXDiffValue; 
+GLabel bYDiffValue; 
+GLabel bEndstopDiffValue; 
+GLabel cAngleDiffValue; 
+GLabel cXDiffValue; 
+GLabel cYDiffValue; 
+GLabel cEndstopDiffValue; 
+GLabel deltaRadiusDiffValue; 
+GLabel rodLengthDiffValue; 

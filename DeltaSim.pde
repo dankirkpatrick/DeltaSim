@@ -49,39 +49,54 @@ double errorZVariance;
 double errorZStdDev;
 
 void setAllText() {
-    towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
-    towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
-    towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
-    towerAXLocTF.setText(nf((float)actual.aTowerLocation.x, 1, 5));
-    towerBXLocTF.setText(nf((float)actual.bTowerLocation.x, 1, 5));
-    towerCXLocTF.setText(nf((float)actual.cTowerLocation.x, 1, 5));
-    towerAYLocTF.setText(nf((float)actual.aTowerLocation.y, 1, 5));
-    towerBYLocTF.setText(nf((float)actual.bTowerLocation.y, 1, 5));
-    towerCYLocTF.setText(nf((float)actual.cTowerLocation.y, 1, 5));
-    endstopAOffsetTF.setText(nf((float)actual.aEndstopOffset, 1, 5));
-    endstopBOffsetTF.setText(nf((float)actual.bEndstopOffset, 1, 5));
-    endstopCOffsetTF.setText(nf((float)actual.cEndstopOffset, 1, 5));
-    deltaRadiusTF.setText(nf((float)actual.deltaRadius, 1, 5));
-    rodLengthTF.setText(nf((float)actual.rodLength, 1, 5));
-    zMultiplierTF.setText(nf((float)zMultiplier, 1, 5));
-    effectorXLocTF.setText(nf((float)actual.effectorLocation.x, 1, 5));
-    effectorYLocTF.setText(nf((float)actual.effectorLocation.y, 1, 5));
-    effectorZLocTF.setText(nf((float)actual.effectorLocation.z, 1, 5));
-    motorALocTF.setText(nf((float)actual.motorsLocation.x, 1, 5));
-    motorBLocTF.setText(nf((float)actual.motorsLocation.y, 1, 5));
-    motorCLocTF.setText(nf((float)actual.motorsLocation.z, 1, 5));
-    bedNormalATF.setText(nf((float)actual.bedNormal.a, 1, 5));
-    bedNormalBTF.setText(nf((float)actual.bedNormal.b, 1, 5));
-    bedNormalCTF.setText(nf((float)actual.bedNormal.c, 1, 5));
-    bedNormalDTF.setText(nf((float)actual.bedNormal.d, 1, 5));
-    errorXAvgValue.setText(nf((float)errorXAvg, 1, 5));
-    errorXStdDevValue.setText(nf((float)errorXStdDev, 1, 5));
-    errorYAvgValue.setText(nf((float)errorYAvg, 1, 5));
-    errorYStdDevValue.setText(nf((float)errorYStdDev, 1, 5));
-    errorZAvgValue.setText(nf((float)errorZAvg, 1, 5));
-    errorZStdDevValue.setText(nf((float)errorZStdDev, 1, 5));
-    errorHeightAvgValue.setText(nf((float)errorHeightAvg, 1, 5));
-    errorHeightStdDevValue.setText(nf((float)errorHeightStdDev, 1, 5));
+  towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
+  towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
+  towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
+  towerAXLocTF.setText(nf((float)actual.aTowerLocation.x, 1, 5));
+  towerBXLocTF.setText(nf((float)actual.bTowerLocation.x, 1, 5));
+  towerCXLocTF.setText(nf((float)actual.cTowerLocation.x, 1, 5));
+  towerAYLocTF.setText(nf((float)actual.aTowerLocation.y, 1, 5));
+  towerBYLocTF.setText(nf((float)actual.bTowerLocation.y, 1, 5));
+  towerCYLocTF.setText(nf((float)actual.cTowerLocation.y, 1, 5));
+  endstopAOffsetTF.setText(nf((float)actual.aEndstopOffset, 1, 5));
+  endstopBOffsetTF.setText(nf((float)actual.bEndstopOffset, 1, 5));
+  endstopCOffsetTF.setText(nf((float)actual.cEndstopOffset, 1, 5));
+  deltaRadiusTF.setText(nf((float)actual.deltaRadius, 1, 5));
+  rodLengthTF.setText(nf((float)actual.rodLength, 1, 5));
+  zMultiplierTF.setText(nf((float)zMultiplier, 1, 5));
+  tensorMultiplierTF.setText(nf((float)tensorMultiplier, 1, 5));
+  effectorXLocTF.setText(nf((float)actual.effectorLocation.x, 1, 5));
+  effectorYLocTF.setText(nf((float)actual.effectorLocation.y, 1, 5));
+  effectorZLocTF.setText(nf((float)actual.effectorLocation.z, 1, 5));
+  motorALocTF.setText(nf((float)actual.motorsLocation.x, 1, 5));
+  motorBLocTF.setText(nf((float)actual.motorsLocation.y, 1, 5));
+  motorCLocTF.setText(nf((float)actual.motorsLocation.z, 1, 5));
+  bedNormalATF.setText(nf((float)actual.bedNormal.a, 1, 5));
+  bedNormalBTF.setText(nf((float)actual.bedNormal.b, 1, 5));
+  bedNormalCTF.setText(nf((float)actual.bedNormal.c, 1, 5));
+  bedNormalDTF.setText(nf((float)actual.bedNormal.d, 1, 5));
+  errorXAvgValue.setText(nf((float)errorXAvg, 1, 5));
+  errorXStdDevValue.setText(nf((float)errorXStdDev, 1, 5));
+  errorYAvgValue.setText(nf((float)errorYAvg, 1, 5));
+  errorYStdDevValue.setText(nf((float)errorYStdDev, 1, 5));
+  errorZAvgValue.setText(nf((float)errorZAvg, 1, 5));
+  errorZStdDevValue.setText(nf((float)errorZStdDev, 1, 5));
+  errorHeightAvgValue.setText(nf((float)errorHeightAvg, 1, 5));
+  errorHeightStdDevValue.setText(nf((float)errorHeightStdDev, 1, 5));
+  aAngleDiffValue.setText(nf((float)(theoretical.aTowerAngle-actual.aTowerAngle), 1, 5));
+  bAngleDiffValue.setText(nf((float)(theoretical.bTowerAngle-actual.bTowerAngle), 1, 5));
+  cAngleDiffValue.setText(nf((float)(theoretical.cTowerAngle-actual.cTowerAngle), 1, 5));
+  aXDiffValue.setText(nf((float)(theoretical.aTowerLocation.x-actual.aTowerLocation.x), 1, 5));
+  bXDiffValue.setText(nf((float)(theoretical.bTowerLocation.x-actual.bTowerLocation.x), 1, 5));
+  cXDiffValue.setText(nf((float)(theoretical.cTowerLocation.x-actual.cTowerLocation.x), 1, 5));
+  aYDiffValue.setText(nf((float)(theoretical.aTowerLocation.y-actual.aTowerLocation.y), 1, 5));
+  bYDiffValue.setText(nf((float)(theoretical.bTowerLocation.y-actual.bTowerLocation.y), 1, 5));
+  cYDiffValue.setText(nf((float)(theoretical.cTowerLocation.y-actual.cTowerLocation.y), 1, 5));
+  aEndstopDiffValue.setText(nf((float)(theoretical.aEndstopOffset-actual.aEndstopOffset), 1, 5));
+  bEndstopDiffValue.setText(nf((float)(theoretical.bEndstopOffset-actual.bEndstopOffset), 1, 5));
+  cEndstopDiffValue.setText(nf((float)(theoretical.cEndstopOffset-actual.cEndstopOffset), 1, 5));
+  deltaRadiusDiffValue.setText(nf((float)(theoretical.deltaRadius-actual.deltaRadius), 1, 5));
+  rodLengthDiffValue.setText(nf((float)(theoretical.rodLength-actual.rodLength), 1, 5));
 }
 
 double sq(double value) {
@@ -265,7 +280,7 @@ void calculateErrors() {
 void draw() {
   if (redrawDelta) {
     redrawDelta = false;
-    background(255);
+    background(200);
     actual.drawDelta(heightErrors, effectorErrors);
   }
 }
@@ -292,7 +307,7 @@ void mouseDragged() {
 
   if (mouseButton == RIGHT) {
     theoretical.effectorLocation.x += (mouseX - pmouseX);
-    theoretical.effectorLocation.y += (mouseY - pmouseY);
+    theoretical.effectorLocation.y -= (mouseY - pmouseY);
     theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
     theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
     theoretical.motorsLocation.y -= theoretical.bEndstopOffset;
@@ -1518,13 +1533,7 @@ class DeltaConfig {
       println("sample is NaN: 0");
       s.setFill(color(0, 100, 100));
     } else {
-      println("Sample:" + sample + "  HueFactor:" + hueFactor + "  Hue: " + ((sample * hueFactor) + 120));
       s.setFill(color((int)(sample * hueFactor + 120), 100, 50));
-      /*
-      s.colorModeX = (int)(sample * hueFactor + 120);
-      s.colorModeY = 100;
-      s.colorModeZ = 50;
-      */
     }
   }
 
@@ -1542,14 +1551,15 @@ class DeltaConfig {
     double minE = getMinError(heightErrors);
     double hueFactor = 120 / Math.max(Math.max(Math.abs(maxE), Math.abs(minE)), 0.1);
 
+    colorMode(HSB, 360, 100, 100);
     for (int i = 0; i < heightErrors.size(); i++) {
       PShape e = probePointsGroup.getChild(i);
       Location l = heightErrors.get(i);
-      e.colorMode(HSB, 360, 100, 100);
       setHSVProbeColor(e, l.z, hueFactor);
       e.resetMatrix();
       e.translate((float)l.x, (float)l.y, (float)(l.z * zMultiplier));
     }
+    colorMode(RGB, 256);
   }
 
   PShape buildHSVProbePoints(ArrayList<Location> heightErrors) {
@@ -1558,16 +1568,15 @@ class DeltaConfig {
     double hueFactor = 120 / Math.max(Math.max(Math.abs(maxE), Math.abs(minE)), 0.1);
 
     //println("l.z="+l.z+"   hueFactor="+hueFactor);
+    colorMode(HSB, 360, 100, 100);
     PShape group = createShape(GROUP);
     for (Location l : heightErrors) {
       PShape s = createShape(ELLIPSE, 0, 0, 10, 10);
-      s.colorMode(HSB, 360, 100, 100);
       setHSVProbeColor(s, l.z, hueFactor);
       s.translate((float)l.x, (float)l.y, (float)(l.z * zMultiplier));
       group.addChild(s);
     }
-    //group.colorMode(RGB);
-    //group.stroke(0);
+    colorMode(RGB, 256);
     
     return group;
   }
