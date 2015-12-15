@@ -302,8 +302,8 @@ public void createGUI(){
   bedNormalDTF = new GTextField(paramsWindow, 460, 320, 120, 30, G4P.SCROLLBARS_NONE);
   bedNormalDTF.setOpaque(true);
   bedNormalDTF.addEventHandler(this, "bedNormalDChange");
-  zMultLabel = new GLabel(paramsWindow, 260, 145, 80, 20);
-  zMultLabel.setText("Z Multiplier:");
+  zMultLabel = new GLabel(paramsWindow, 220, 145, 120, 20);
+  zMultLabel.setText("Height Multiplier:");
   zMultLabel.setTextBold();
   zMultLabel.setOpaque(false);
   zMultiplierTF = new GTextField(paramsWindow, 340, 140, 120, 30, G4P.SCROLLBARS_NONE);
@@ -362,7 +362,7 @@ public void createGUI(){
   errorHeightStdDevValue.setText("0.0");
   errorHeightStdDevValue.setOpaque(false);
   tensorMultiplierLabel = new GLabel(paramsWindow, 220, 175, 120, 20);
-  tensorMultiplierLabel.setText("Tensor Multipler");
+  tensorMultiplierLabel.setText("Effector Multipler:");
   tensorMultiplierLabel.setTextBold();
   tensorMultiplierLabel.setOpaque(false);
   tensorMultiplierTF = new GTextField(paramsWindow, 340, 170, 120, 30, G4P.SCROLLBARS_NONE);
