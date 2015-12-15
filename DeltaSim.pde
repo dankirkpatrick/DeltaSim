@@ -260,7 +260,7 @@ void keyPressed() {
         loc.x -= 0.1;
       } else {
         actual.deltaRadius -= 0.1;
-        actual.CalculateFromAngles();
+        actual.CalculateFromAngles(); //<>//
       }
     } else if (keyCode == RIGHT) {
       handled = true;
@@ -466,7 +466,7 @@ void calculateErrors() {
   } else {
     theoretical.updateHSVProbePoints(probePointGroupShape, heightErrors);
   }
-  tensorsShape = theoretical.buildTensors(heightErrors, effectorErrors); //<>//
+  tensorsShape = theoretical.buildTensors(heightErrors, effectorErrors);
 }
 
 class Location { //<>//
@@ -1752,17 +1752,14 @@ class DeltaConfig {
   }
 
   void CalculateFromAngles() {
-    this.aTowerLocation.x = this.deltaRadius * Math.cos(this.aTowerAngle);
-    this.aTowerLocation.y = this.deltaRadius * Math.sin(this.aTowerAngle);
+    this.aTowerLocation.x = this.centerLocation.x + this.deltaRadius * Math.cos(this.aTowerAngle);
+    this.aTowerLocation.y = this.centerLocation.x + this.deltaRadius * Math.sin(this.aTowerAngle);
 
-    this.bTowerLocation.x = this.deltaRadius * Math.cos(this.bTowerAngle);
-    this.bTowerLocation.y = this.deltaRadius * Math.sin(this.bTowerAngle);
+    this.bTowerLocation.x = this.centerLocation.x + this.deltaRadius * Math.cos(this.bTowerAngle);
+    this.bTowerLocation.y = this.centerLocation.x + this.deltaRadius * Math.sin(this.bTowerAngle);
 
-    this.cTowerLocation.x = this.deltaRadius * Math.cos(this.cTowerAngle);
-    this.cTowerLocation.y = this.deltaRadius * Math.sin(this.cTowerAngle);
-
-    this.centerLocation.x = 0;
-    this.centerLocation.y = 0;
+    this.cTowerLocation.x = this.centerLocation.x + this.deltaRadius * Math.cos(this.cTowerAngle);
+    this.cTowerLocation.y = this.centerLocation.x + this.deltaRadius * Math.sin(this.cTowerAngle);
 
     this.transform.recalc(this);
     /*
@@ -1779,13 +1776,14 @@ class DeltaConfig {
   }  
 
   void CalculateCenter() {
+    double abMidX = (this.aTowerLocation.x + this.bTowerLocation.x) / 2.0;
     double abMidY = (this.aTowerLocation.y + this.bTowerLocation.y) / 2.0;
     double slopeABp = -(this.aTowerLocation.x - this.bTowerLocation.x) / (this.aTowerLocation.y - this.bTowerLocation.y);
     double acMidX = (this.aTowerLocation.x + this.cTowerLocation.x) / 2.0;
     double acMidY = (this.aTowerLocation.y + this.cTowerLocation.y) / 2.0;
     double slopeACp = -(this.aTowerLocation.x - this.cTowerLocation.x) / (this.aTowerLocation.y - this.cTowerLocation.y);
 
-    this.centerLocation.x = (abMidY - acMidY + acMidX * (slopeACp - slopeABp)) / (slopeACp - slopeABp);
+    this.centerLocation.x = (abMidY - acMidY + acMidX * slopeACp - abMidX * slopeABp) / (slopeACp - slopeABp);
     this.centerLocation.y = acMidY - slopeACp * (acMidX - this.centerLocation.x);
 
     this.deltaRadius = Math.sqrt((this.aTowerLocation.x - this.centerLocation.x) * (this.aTowerLocation.x - this.centerLocation.x) + 
