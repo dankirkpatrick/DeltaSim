@@ -83,9 +83,9 @@ void setAllText() {
   errorZStdDevValue.setText(nf((float)errorZStdDev, 1, 5));
   errorHeightAvgValue.setText(nf((float)errorHeightAvg, 1, 5));
   errorHeightStdDevValue.setText(nf((float)errorHeightStdDev, 1, 5));
-  aAngleDiffValue.setText(nf((float)(theoretical.aTowerAngle-actual.aTowerAngle), 1, 5));
-  bAngleDiffValue.setText(nf((float)(theoretical.bTowerAngle-actual.bTowerAngle), 1, 5));
-  cAngleDiffValue.setText(nf((float)(theoretical.cTowerAngle-actual.cTowerAngle), 1, 5));
+  aAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.aTowerAngle-actual.aTowerAngle), 1, 5));
+  bAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.bTowerAngle-actual.bTowerAngle), 1, 5));
+  cAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.cTowerAngle-actual.cTowerAngle), 1, 5));
   aXDiffValue.setText(nf((float)(theoretical.aTowerLocation.x-actual.aTowerLocation.x), 1, 5));
   bXDiffValue.setText(nf((float)(theoretical.bTowerLocation.x-actual.bTowerLocation.x), 1, 5));
   cXDiffValue.setText(nf((float)(theoretical.cTowerLocation.x-actual.cTowerLocation.x), 1, 5));
