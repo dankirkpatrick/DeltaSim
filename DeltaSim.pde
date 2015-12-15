@@ -48,6 +48,33 @@ double errorZAvg;
 double errorZVariance;
 double errorZStdDev;
 
+ArrayList<Location> readCSV(String filename) {
+  ArrayList<Location> results = new ArrayList<Location>();
+  String[] lines = loadStrings(filename);
+  for (String l : lines) {
+    String[] tokens = splitTokens(l, ",");
+    if (tokens.length != 3) {
+      println("ERROR: unexpected line in CSV: " + l);
+    } else {
+      Location loc = new Location();
+      loc.x = Double.parseDouble(tokens[0]);
+      loc.y = Double.parseDouble(tokens[1]);
+      loc.z = Double.parseDouble(tokens[2]);
+      results.add(loc);
+    }
+  }
+  return results;
+}
+
+void calibrateForMark(String filename) {
+  DeltaConfig markConfig = new DeltaConfig();
+  ArrayList<Location> samplePoints = readCSV(filename);
+  DavidCrockerCalibration calib = new DavidCrockerCalibration();
+  markConfig.debug("BEFORE");
+  calib.doDeltaCalibration(markConfig, 6, samplePoints);
+  markConfig.debug("AFTER");
+}
+
 void setup() {
   size(600, 600, P3D);
 
