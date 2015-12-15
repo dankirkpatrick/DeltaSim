@@ -48,109 +48,6 @@ double errorZAvg;
 double errorZVariance;
 double errorZStdDev;
 
-void setAllText() {
-  towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
-  towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
-  towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
-  towerAXLocTF.setText(nf((float)actual.aTowerLocation.x, 1, 5));
-  towerBXLocTF.setText(nf((float)actual.bTowerLocation.x, 1, 5));
-  towerCXLocTF.setText(nf((float)actual.cTowerLocation.x, 1, 5));
-  towerAYLocTF.setText(nf((float)actual.aTowerLocation.y, 1, 5));
-  towerBYLocTF.setText(nf((float)actual.bTowerLocation.y, 1, 5));
-  towerCYLocTF.setText(nf((float)actual.cTowerLocation.y, 1, 5));
-  endstopAOffsetTF.setText(nf((float)actual.aEndstopOffset, 1, 5));
-  endstopBOffsetTF.setText(nf((float)actual.bEndstopOffset, 1, 5));
-  endstopCOffsetTF.setText(nf((float)actual.cEndstopOffset, 1, 5));
-  deltaRadiusTF.setText(nf((float)actual.deltaRadius, 1, 5));
-  rodLengthTF.setText(nf((float)actual.rodLength, 1, 5));
-  zMultiplierTF.setText(nf((float)zMultiplier, 1, 5));
-  tensorMultiplierTF.setText(nf((float)tensorMultiplier, 1, 5));
-  effectorXLocTF.setText(nf((float)actual.effectorLocation.x, 1, 5));
-  effectorYLocTF.setText(nf((float)actual.effectorLocation.y, 1, 5));
-  effectorZLocTF.setText(nf((float)actual.effectorLocation.z, 1, 5));
-  motorALocTF.setText(nf((float)actual.motorsLocation.x, 1, 5));
-  motorBLocTF.setText(nf((float)actual.motorsLocation.y, 1, 5));
-  motorCLocTF.setText(nf((float)actual.motorsLocation.z, 1, 5));
-  bedNormalATF.setText(nf((float)actual.bedNormal.a, 1, 5));
-  bedNormalBTF.setText(nf((float)actual.bedNormal.b, 1, 5));
-  bedNormalCTF.setText(nf((float)actual.bedNormal.c, 1, 5));
-  bedNormalDTF.setText(nf((float)actual.bedNormal.d, 1, 5));
-  errorXAvgValue.setText(nf((float)errorXAvg, 1, 5));
-  errorXStdDevValue.setText(nf((float)errorXStdDev, 1, 5));
-  errorYAvgValue.setText(nf((float)errorYAvg, 1, 5));
-  errorYStdDevValue.setText(nf((float)errorYStdDev, 1, 5));
-  errorZAvgValue.setText(nf((float)errorZAvg, 1, 5));
-  errorZStdDevValue.setText(nf((float)errorZStdDev, 1, 5));
-  errorHeightAvgValue.setText(nf((float)errorHeightAvg, 1, 5));
-  errorHeightStdDevValue.setText(nf((float)errorHeightStdDev, 1, 5));
-  aAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.aTowerAngle-actual.aTowerAngle), 1, 5));
-  bAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.bTowerAngle-actual.bTowerAngle), 1, 5));
-  cAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.cTowerAngle-actual.cTowerAngle), 1, 5));
-  aXDiffValue.setText(nf((float)(theoretical.aTowerLocation.x-actual.aTowerLocation.x), 1, 5));
-  bXDiffValue.setText(nf((float)(theoretical.bTowerLocation.x-actual.bTowerLocation.x), 1, 5));
-  cXDiffValue.setText(nf((float)(theoretical.cTowerLocation.x-actual.cTowerLocation.x), 1, 5));
-  aYDiffValue.setText(nf((float)(theoretical.aTowerLocation.y-actual.aTowerLocation.y), 1, 5));
-  bYDiffValue.setText(nf((float)(theoretical.bTowerLocation.y-actual.bTowerLocation.y), 1, 5));
-  cYDiffValue.setText(nf((float)(theoretical.cTowerLocation.y-actual.cTowerLocation.y), 1, 5));
-  aEndstopDiffValue.setText(nf((float)(theoretical.aEndstopOffset-actual.aEndstopOffset), 1, 5));
-  bEndstopDiffValue.setText(nf((float)(theoretical.bEndstopOffset-actual.bEndstopOffset), 1, 5));
-  cEndstopDiffValue.setText(nf((float)(theoretical.cEndstopOffset-actual.cEndstopOffset), 1, 5));
-  deltaRadiusDiffValue.setText(nf((float)(theoretical.deltaRadius-actual.deltaRadius), 1, 5));
-  rodLengthDiffValue.setText(nf((float)(theoretical.rodLength-actual.rodLength), 1, 5));
-}
-
-double sq(double value) {
-  return value * value;
-}
-
-void createCalibrationPoints(double deltaRadius) {
-  testPoints = new ArrayList<Location>();
-  motorTestHeights = new ArrayList<Location>();
-  effectorErrors = new ArrayList<Location>();
-  heightErrors = new ArrayList<Location>();
-  
-  testPoints.add(new Location(0, 0, 0));
-  motorTestHeights.add(new Location());
-  effectorErrors.add(new Location());
-  heightErrors.add(new Location());
-
-  for (int angle = 0; angle < 360; angle += 60) {
-    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle)), deltaRadius*Math.sin(radians(angle)), 0));
-    motorTestHeights.add(new Location());
-    effectorErrors.add(new Location());
-    heightErrors.add(new Location());
-
-    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle))/2.0, deltaRadius*Math.sin(radians(angle))/2.0, 0));
-    motorTestHeights.add(new Location());
-    effectorErrors.add(new Location());
-    heightErrors.add(new Location());
-  }
-
-  for (int angle = 30; angle < 360; angle += 60) {
-    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle))/Math.sqrt(2), deltaRadius*Math.sin(radians(angle))/Math.sqrt(2), 0));
-    motorTestHeights.add(new Location());
-    effectorErrors.add(new Location());
-    heightErrors.add(new Location());
-  }
-}
-
-void createTestPoints() {
-  testPoints = new ArrayList<Location>();
-  motorTestHeights = new ArrayList<Location>();
-  effectorErrors = new ArrayList<Location>();
-  heightErrors = new ArrayList<Location>();
-  int angle = 360;
-  for (int radius = 0; radius < (theoretical.deltaRadius); radius+= 15) {
-    for (angle = angle - 360; angle < 360; angle += (radius > 0? (theoretical.deltaRadius + 20 - radius)/2.5 : 360)) {
-      Location l = new Location(radius*Math.sin(radians(angle)), radius*Math.cos(radians(angle)), 0);
-      testPoints.add(l);
-      motorTestHeights.add(new Location());
-      effectorErrors.add(new Location());
-      heightErrors.add(new Location());
-    }
-  }
-}
-
 void setup() {
   size(600, 600, P3D);
 
@@ -187,94 +84,6 @@ void setup() {
   
   gcode = new GCode(actual);
   gcode.readFile("/Users/dan/Downloads/lowpolyskulllisa.gcode");
-}
-
-void calculateErrors() {
-  double x = actual.effectorLocation.x;
-  double y = actual.effectorLocation.y;
-  double z = actual.effectorLocation.z;
-
-  double sumXErrorX = 0;
-  double sumYErrorX = 0;
-  double sumZErrorX = 0;
-  double sumHeightErrorX = 0;
-  double sumXErrorX2 = 0;
-  double sumYErrorX2 = 0;
-  double sumZErrorX2 = 0;
-  double sumHeightErrorX2 = 0;
-  setAllText();
-  
-  for (int i = 0; i < testPoints.size(); i++) {
-    Location l = testPoints.get(i);
-    Location m = motorTestHeights.get(i);
-    theoretical.effectorLocation.x = l.x;
-    theoretical.effectorLocation.y = l.y;
-    theoretical.effectorLocation.z = 0;
-
-    theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
-    m.x = theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
-    m.y = theoretical.motorsLocation.y -= theoretical.bEndstopOffset;
-    m.z = theoretical.motorsLocation.z -= theoretical.cEndstopOffset;
-
-    actual.motorsLocation.x = theoretical.motorsLocation.x + actual.aEndstopOffset;
-    actual.motorsLocation.y = theoretical.motorsLocation.y + actual.bEndstopOffset;
-    actual.motorsLocation.z = theoretical.motorsLocation.z + actual.cEndstopOffset;
-    actual.CalculateEffectorLocation(actual.motorsLocation, actual.effectorLocation);
-
-    Location e = effectorErrors.get(i);
-    e.x = theoretical.effectorLocation.x - actual.effectorLocation.x;
-    e.y = theoretical.effectorLocation.y - actual.effectorLocation.y;
-    e.z = theoretical.effectorLocation.z - actual.effectorLocation.z;
-
-    Location h = heightErrors.get(i);
-    h.x = theoretical.effectorLocation.x;
-    h.y = theoretical.effectorLocation.y;
-    h.z = actual.calculateActualBedHeight(theoretical.effectorLocation.x, theoretical.effectorLocation.y) - actual.effectorLocation.z;
-    
-    sumXErrorX += (e.x);
-    sumYErrorX += (e.y);
-    sumZErrorX += (e.z);
-    sumHeightErrorX += (h.z);
-    sumXErrorX2 += sq(e.x);
-    sumYErrorX2 += sq(e.y);
-    sumZErrorX2 += sq(e.z);
-    sumHeightErrorX2 += sq(h.z);
-  }
-
-  errorHeightAvg = sumHeightErrorX / testPoints.size();
-  errorHeightVariance = sumHeightErrorX2 / (testPoints.size() - 1);
-  errorHeightStdDev = Math.sqrt(errorHeightVariance);
-  errorXAvg = sumXErrorX / testPoints.size();
-  errorXVariance = sumXErrorX2 / (testPoints.size() - 1);
-  errorXStdDev = Math.sqrt(errorXVariance);
-  errorYAvg = sumYErrorX / testPoints.size();
-  errorYVariance = sumYErrorX2 / (testPoints.size() - 1);
-  errorYStdDev = Math.sqrt(errorYVariance);
-  errorZAvg = sumZErrorX / testPoints.size();
-  errorZVariance = sumZErrorX2 / (testPoints.size() - 1);
-  errorZStdDev = Math.sqrt(errorZVariance);
-  println("Mean: " + errorHeightAvg);
-  println("Variance: " + errorHeightVariance);
-  println("StdDev: " + errorHeightStdDev);
-
-  theoretical.effectorLocation.x = actual.effectorLocation.x = x;
-  theoretical.effectorLocation.y = actual.effectorLocation.y = y;
-  theoretical.effectorLocation.z = actual.effectorLocation.z = z;
-  theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
-  theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
-  theoretical.motorsLocation.y -= theoretical.bEndstopOffset;
-  theoretical.motorsLocation.z -= theoretical.cEndstopOffset;
-  actual.CalculateMotorHeights(actual.effectorLocation, actual.motorsLocation);
-  actual.motorsLocation.x -= actual.aEndstopOffset;
-  actual.motorsLocation.y -= actual.bEndstopOffset;
-  actual.motorsLocation.z -= actual.cEndstopOffset;
-  
-  if (probePointGroupShape == null) {
-    probePointGroupShape = theoretical.buildHSVProbePoints(heightErrors);
-  } else {
-    theoretical.updateHSVProbePoints(probePointGroupShape, heightErrors);
-  }
-  tensorsShape = theoretical.buildTensors(heightErrors, effectorErrors); //<>//
 }
 
 void draw() {
@@ -412,7 +221,7 @@ void keyPressed() {
     effectorErrorsCB.setSelected(viewMode > 1);
   } else if (key == 'p') {
     // Do z-probe calibration
-    davidCrockerCalibration.doDeltaCalibration(theoretical, 6, testPoints); //<>//
+    davidCrockerCalibration.doDeltaCalibration(theoretical, 6, testPoints);
     calculateErrors();
   } else if (key == CODED) {
     Location loc;
@@ -469,7 +278,198 @@ void keyPressed() {
   }
 }
 
-class Location {
+void setAllText() {
+  towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
+  towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
+  towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
+  towerAXLocTF.setText(nf((float)actual.aTowerLocation.x, 1, 5));
+  towerBXLocTF.setText(nf((float)actual.bTowerLocation.x, 1, 5));
+  towerCXLocTF.setText(nf((float)actual.cTowerLocation.x, 1, 5));
+  towerAYLocTF.setText(nf((float)actual.aTowerLocation.y, 1, 5));
+  towerBYLocTF.setText(nf((float)actual.bTowerLocation.y, 1, 5));
+  towerCYLocTF.setText(nf((float)actual.cTowerLocation.y, 1, 5));
+  endstopAOffsetTF.setText(nf((float)actual.aEndstopOffset, 1, 5));
+  endstopBOffsetTF.setText(nf((float)actual.bEndstopOffset, 1, 5));
+  endstopCOffsetTF.setText(nf((float)actual.cEndstopOffset, 1, 5));
+  deltaRadiusTF.setText(nf((float)actual.deltaRadius, 1, 5));
+  rodLengthTF.setText(nf((float)actual.rodLength, 1, 5));
+  zMultiplierTF.setText(nf((float)zMultiplier, 1, 5));
+  tensorMultiplierTF.setText(nf((float)tensorMultiplier, 1, 5));
+  effectorXLocTF.setText(nf((float)actual.effectorLocation.x, 1, 5));
+  effectorYLocTF.setText(nf((float)actual.effectorLocation.y, 1, 5));
+  effectorZLocTF.setText(nf((float)actual.effectorLocation.z, 1, 5));
+  motorALocTF.setText(nf((float)actual.motorsLocation.x, 1, 5));
+  motorBLocTF.setText(nf((float)actual.motorsLocation.y, 1, 5));
+  motorCLocTF.setText(nf((float)actual.motorsLocation.z, 1, 5));
+  bedNormalATF.setText(nf((float)actual.bedNormal.a, 1, 5));
+  bedNormalBTF.setText(nf((float)actual.bedNormal.b, 1, 5));
+  bedNormalCTF.setText(nf((float)actual.bedNormal.c, 1, 5));
+  bedNormalDTF.setText(nf((float)actual.bedNormal.d, 1, 5));
+  errorXAvgValue.setText(nf((float)errorXAvg, 1, 5));
+  errorXStdDevValue.setText(nf((float)errorXStdDev, 1, 5));
+  errorYAvgValue.setText(nf((float)errorYAvg, 1, 5));
+  errorYStdDevValue.setText(nf((float)errorYStdDev, 1, 5));
+  errorZAvgValue.setText(nf((float)errorZAvg, 1, 5));
+  errorZStdDevValue.setText(nf((float)errorZStdDev, 1, 5));
+  errorHeightAvgValue.setText(nf((float)errorHeightAvg, 1, 5));
+  errorHeightStdDevValue.setText(nf((float)errorHeightStdDev, 1, 5));
+  aAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.aTowerAngle-actual.aTowerAngle), 1, 5));
+  bAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.bTowerAngle-actual.bTowerAngle), 1, 5));
+  cAngleDiffValue.setText(nf((float)Math.toDegrees(theoretical.cTowerAngle-actual.cTowerAngle), 1, 5));
+  aXDiffValue.setText(nf((float)(theoretical.aTowerLocation.x-actual.aTowerLocation.x), 1, 5));
+  bXDiffValue.setText(nf((float)(theoretical.bTowerLocation.x-actual.bTowerLocation.x), 1, 5));
+  cXDiffValue.setText(nf((float)(theoretical.cTowerLocation.x-actual.cTowerLocation.x), 1, 5));
+  aYDiffValue.setText(nf((float)(theoretical.aTowerLocation.y-actual.aTowerLocation.y), 1, 5));
+  bYDiffValue.setText(nf((float)(theoretical.bTowerLocation.y-actual.bTowerLocation.y), 1, 5));
+  cYDiffValue.setText(nf((float)(theoretical.cTowerLocation.y-actual.cTowerLocation.y), 1, 5));
+  aEndstopDiffValue.setText(nf((float)(theoretical.aEndstopOffset-actual.aEndstopOffset), 1, 5));
+  bEndstopDiffValue.setText(nf((float)(theoretical.bEndstopOffset-actual.bEndstopOffset), 1, 5));
+  cEndstopDiffValue.setText(nf((float)(theoretical.cEndstopOffset-actual.cEndstopOffset), 1, 5));
+  deltaRadiusDiffValue.setText(nf((float)(theoretical.deltaRadius-actual.deltaRadius), 1, 5));
+  rodLengthDiffValue.setText(nf((float)(theoretical.rodLength-actual.rodLength), 1, 5));
+}
+
+double sq(double value) {
+  return value * value;
+}
+
+void createCalibrationPoints(double deltaRadius) {
+  testPoints = new ArrayList<Location>();
+  motorTestHeights = new ArrayList<Location>();
+  effectorErrors = new ArrayList<Location>();
+  heightErrors = new ArrayList<Location>();
+  
+  testPoints.add(new Location(0, 0, 0));
+  motorTestHeights.add(new Location());
+  effectorErrors.add(new Location());
+  heightErrors.add(new Location());
+
+  for (int angle = 0; angle < 360; angle += 60) {
+    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle)), deltaRadius*Math.sin(radians(angle)), 0));
+    motorTestHeights.add(new Location());
+    effectorErrors.add(new Location());
+    heightErrors.add(new Location());
+
+    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle))/2.0, deltaRadius*Math.sin(radians(angle))/2.0, 0));
+    motorTestHeights.add(new Location());
+    effectorErrors.add(new Location());
+    heightErrors.add(new Location());
+  }
+
+  for (int angle = 30; angle < 360; angle += 60) {
+    testPoints.add(new Location(deltaRadius*0.9*Math.cos(radians(angle))/Math.sqrt(2), deltaRadius*Math.sin(radians(angle))/Math.sqrt(2), 0));
+    motorTestHeights.add(new Location());
+    effectorErrors.add(new Location());
+    heightErrors.add(new Location());
+  }
+}
+
+void createTestPoints() {
+  testPoints = new ArrayList<Location>();
+  motorTestHeights = new ArrayList<Location>();
+  effectorErrors = new ArrayList<Location>();
+  heightErrors = new ArrayList<Location>();
+  int angle = 360;
+  for (int radius = 0; radius < (theoretical.deltaRadius); radius+= 15) {
+    for (angle = angle - 360; angle < 360; angle += (radius > 0? (theoretical.deltaRadius + 20 - radius)/2.5 : 360)) {
+      Location l = new Location(radius*Math.sin(radians(angle)), radius*Math.cos(radians(angle)), 0);
+      testPoints.add(l);
+      motorTestHeights.add(new Location());
+      effectorErrors.add(new Location());
+      heightErrors.add(new Location());
+    }
+  }
+}
+
+void calculateErrors() {
+  double x = actual.effectorLocation.x;
+  double y = actual.effectorLocation.y;
+  double z = actual.effectorLocation.z;
+
+  double sumXErrorX = 0;
+  double sumYErrorX = 0;
+  double sumZErrorX = 0;
+  double sumHeightErrorX = 0;
+  double sumXErrorX2 = 0;
+  double sumYErrorX2 = 0;
+  double sumZErrorX2 = 0;
+  double sumHeightErrorX2 = 0;
+  setAllText();
+  
+  for (int i = 0; i < testPoints.size(); i++) {
+    Location l = testPoints.get(i);
+    Location m = motorTestHeights.get(i);
+    theoretical.effectorLocation.x = l.x;
+    theoretical.effectorLocation.y = l.y;
+    theoretical.effectorLocation.z = 0;
+
+    theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
+    m.x = theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
+    m.y = theoretical.motorsLocation.y -= theoretical.bEndstopOffset;
+    m.z = theoretical.motorsLocation.z -= theoretical.cEndstopOffset;
+
+    actual.motorsLocation.x = theoretical.motorsLocation.x + actual.aEndstopOffset;
+    actual.motorsLocation.y = theoretical.motorsLocation.y + actual.bEndstopOffset;
+    actual.motorsLocation.z = theoretical.motorsLocation.z + actual.cEndstopOffset;
+    actual.CalculateEffectorLocation(actual.motorsLocation, actual.effectorLocation);
+
+    Location e = effectorErrors.get(i);
+    e.x = theoretical.effectorLocation.x - actual.effectorLocation.x;
+    e.y = theoretical.effectorLocation.y - actual.effectorLocation.y;
+    e.z = theoretical.effectorLocation.z - actual.effectorLocation.z;
+
+    Location h = heightErrors.get(i);
+    h.x = theoretical.effectorLocation.x;
+    h.y = theoretical.effectorLocation.y;
+    h.z = actual.calculateActualBedHeight(theoretical.effectorLocation.x, theoretical.effectorLocation.y) - actual.effectorLocation.z;
+    
+    sumXErrorX += (e.x);
+    sumYErrorX += (e.y);
+    sumZErrorX += (e.z);
+    sumHeightErrorX += (h.z);
+    sumXErrorX2 += sq(e.x);
+    sumYErrorX2 += sq(e.y);
+    sumZErrorX2 += sq(e.z);
+    sumHeightErrorX2 += sq(h.z);
+  }
+
+  errorHeightAvg = sumHeightErrorX / testPoints.size();
+  errorHeightVariance = sumHeightErrorX2 / (testPoints.size() - 1);
+  errorHeightStdDev = Math.sqrt(errorHeightVariance);
+  errorXAvg = sumXErrorX / testPoints.size();
+  errorXVariance = sumXErrorX2 / (testPoints.size() - 1);
+  errorXStdDev = Math.sqrt(errorXVariance);
+  errorYAvg = sumYErrorX / testPoints.size();
+  errorYVariance = sumYErrorX2 / (testPoints.size() - 1);
+  errorYStdDev = Math.sqrt(errorYVariance);
+  errorZAvg = sumZErrorX / testPoints.size();
+  errorZVariance = sumZErrorX2 / (testPoints.size() - 1);
+  errorZStdDev = Math.sqrt(errorZVariance);
+  println("Mean: " + errorHeightAvg);
+  println("Variance: " + errorHeightVariance);
+  println("StdDev: " + errorHeightStdDev);
+
+  theoretical.effectorLocation.x = actual.effectorLocation.x = x;
+  theoretical.effectorLocation.y = actual.effectorLocation.y = y;
+  theoretical.effectorLocation.z = actual.effectorLocation.z = z;
+  theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
+  theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
+  theoretical.motorsLocation.y -= theoretical.bEndstopOffset;
+  theoretical.motorsLocation.z -= theoretical.cEndstopOffset;
+  actual.CalculateMotorHeights(actual.effectorLocation, actual.motorsLocation);
+  actual.motorsLocation.x -= actual.aEndstopOffset;
+  actual.motorsLocation.y -= actual.bEndstopOffset;
+  actual.motorsLocation.z -= actual.cEndstopOffset;
+  
+  if (probePointGroupShape == null) {
+    probePointGroupShape = theoretical.buildHSVProbePoints(heightErrors);
+  } else {
+    theoretical.updateHSVProbePoints(probePointGroupShape, heightErrors);
+  }
+  tensorsShape = theoretical.buildTensors(heightErrors, effectorErrors); //<>//
+}
+
+class Location { //<>//
   double x;
   double y;
   double z;
