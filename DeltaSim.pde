@@ -32,8 +32,8 @@ ArrayList<Location> motorTestHeights;    // The (A, B, C) motor locations for te
 ArrayList<Location> effectorErrors;      // The (X, Y, Z) errors for each of the test points
 ArrayList<Location> heightErrors;        // The (X, Y) effector location, and (Z) height error
 
-PShape probePointGroupShape;
-PShape tensorGroupShape;
+PShape probePointGroupShape = null;
+PShape tensorsShape;
 
 double errorHeightAvg;
 double errorHeightVariance;
@@ -47,6 +47,42 @@ double errorYStdDev;
 double errorZAvg;
 double errorZVariance;
 double errorZStdDev;
+
+void setAllText() {
+    towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
+    towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
+    towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
+    towerAXLocTF.setText(nf((float)actual.aTowerLocation.x, 1, 5));
+    towerBXLocTF.setText(nf((float)actual.bTowerLocation.x, 1, 5));
+    towerCXLocTF.setText(nf((float)actual.cTowerLocation.x, 1, 5));
+    towerAYLocTF.setText(nf((float)actual.aTowerLocation.y, 1, 5));
+    towerBYLocTF.setText(nf((float)actual.bTowerLocation.y, 1, 5));
+    towerCYLocTF.setText(nf((float)actual.cTowerLocation.y, 1, 5));
+    endstopAOffsetTF.setText(nf((float)actual.aEndstopOffset, 1, 5));
+    endstopBOffsetTF.setText(nf((float)actual.bEndstopOffset, 1, 5));
+    endstopCOffsetTF.setText(nf((float)actual.cEndstopOffset, 1, 5));
+    deltaRadiusTF.setText(nf((float)actual.deltaRadius, 1, 5));
+    rodLengthTF.setText(nf((float)actual.rodLength, 1, 5));
+    zMultiplierTF.setText(nf((float)zMultiplier, 1, 5));
+    effectorXLocTF.setText(nf((float)actual.effectorLocation.x, 1, 5));
+    effectorYLocTF.setText(nf((float)actual.effectorLocation.y, 1, 5));
+    effectorZLocTF.setText(nf((float)actual.effectorLocation.z, 1, 5));
+    motorALocTF.setText(nf((float)actual.motorsLocation.x, 1, 5));
+    motorBLocTF.setText(nf((float)actual.motorsLocation.y, 1, 5));
+    motorCLocTF.setText(nf((float)actual.motorsLocation.z, 1, 5));
+    bedNormalATF.setText(nf((float)actual.bedNormal.a, 1, 5));
+    bedNormalBTF.setText(nf((float)actual.bedNormal.b, 1, 5));
+    bedNormalCTF.setText(nf((float)actual.bedNormal.c, 1, 5));
+    bedNormalDTF.setText(nf((float)actual.bedNormal.d, 1, 5));
+    errorXAvgValue.setText(nf((float)errorXAvg, 1, 5));
+    errorXStdDevValue.setText(nf((float)errorXStdDev, 1, 5));
+    errorYAvgValue.setText(nf((float)errorYAvg, 1, 5));
+    errorYStdDevValue.setText(nf((float)errorYStdDev, 1, 5));
+    errorZAvgValue.setText(nf((float)errorZAvg, 1, 5));
+    errorZStdDevValue.setText(nf((float)errorZStdDev, 1, 5));
+    errorHeightAvgValue.setText(nf((float)errorHeightAvg, 1, 5));
+    errorHeightStdDevValue.setText(nf((float)errorHeightStdDev, 1, 5));
+}
 
 double sq(double value) {
   return value * value;
@@ -90,7 +126,7 @@ void createTestPoints() {
   heightErrors = new ArrayList<Location>();
   int angle = 360;
   for (int radius = 0; radius < (theoretical.deltaRadius); radius+= 15) {
-    for (angle = angle - 360; angle < 360; angle += (radius > 0? (theoretical.deltaRadius + 5 - radius)/3 : 360)) {
+    for (angle = angle - 360; angle < 360; angle += (radius > 0? (theoretical.deltaRadius + 20 - radius)/2.5 : 360)) {
       Location l = new Location(radius*Math.sin(radians(angle)), radius*Math.cos(radians(angle)), 0);
       testPoints.add(l);
       motorTestHeights.add(new Location());
@@ -117,7 +153,7 @@ void setup() {
   actual.effectorLocation.y = theoretical.effectorLocation.y = 0;
   actual.effectorLocation.z = theoretical.effectorLocation.z = 0;
   zMultiplier = 50;
-  tensorMultiplier = 20;
+  tensorMultiplier = 40;
 
   theoretical.CalculateMotorHeights(theoretical.effectorLocation, theoretical.motorsLocation);
   theoretical.motorsLocation.x -= theoretical.aEndstopOffset;
@@ -218,8 +254,12 @@ void calculateErrors() {
   actual.motorsLocation.y -= actual.bEndstopOffset;
   actual.motorsLocation.z -= actual.cEndstopOffset;
   
-  //probePointGroupShape = theoretical.buildHSVProbePoints(testPoints);
-  tensorGroupShape = theoretical.buildTensors(heightErrors, effectorErrors); //<>//
+  if (probePointGroupShape == null) {
+    probePointGroupShape = theoretical.buildHSVProbePoints(heightErrors);
+  } else {
+    theoretical.updateHSVProbePoints(probePointGroupShape, heightErrors);
+  }
+  tensorsShape = theoretical.buildTensors(heightErrors, effectorErrors); //<>//
 }
 
 void draw() {
@@ -353,6 +393,8 @@ void keyPressed() {
     calculateErrors();
   } else if (key == 't') {
     viewMode = (viewMode + 1) % 4;
+    probePointsDisplayedCB.setSelected((viewMode % 2)==1);
+    effectorErrorsCB.setSelected(viewMode > 1);
   } else if (key == 'p') {
     // Do z-probe calibration
     davidCrockerCalibration.doDeltaCalibration(theoretical, 6, testPoints); //<>//
@@ -1473,10 +1515,16 @@ class DeltaConfig {
 
   void setHSVProbeColor(PShape s, double sample, double hueFactor) {
     if (Double.isNaN(sample)) {
-      s.fill(0, 100, 100);
+      println("sample is NaN: 0");
+      s.setFill(color(0, 100, 100));
     } else {
-      //println("Sample:" + sample + "  HueFactor:" + hueFactor + "Hue: " + ((sample * hueFactor) + 120));
-      s.fill((int)(sample * hueFactor) + 120, 100, 50);
+      println("Sample:" + sample + "  HueFactor:" + hueFactor + "  Hue: " + ((sample * hueFactor) + 120));
+      s.setFill(color((int)(sample * hueFactor + 120), 100, 50));
+      /*
+      s.colorModeX = (int)(sample * hueFactor + 120);
+      s.colorModeY = 100;
+      s.colorModeZ = 50;
+      */
     }
   }
 
@@ -1489,17 +1537,33 @@ class DeltaConfig {
     }
   }
 
-  PShape buildHSVProbePoints(ArrayList<Location> heightErrors) {
-    PShape group = createShape(GROUP);
-    
-    group.colorMode(HSB, 360, 100, 100);
+  void updateHSVProbePoints(PShape probePointsGroup, ArrayList<Location> heightErrors) {
     double maxE = getMaxError(heightErrors);
     double minE = getMinError(heightErrors);
     double hueFactor = 120 / Math.max(Math.max(Math.abs(maxE), Math.abs(minE)), 0.1);
+
+    for (int i = 0; i < heightErrors.size(); i++) {
+      PShape e = probePointsGroup.getChild(i);
+      Location l = heightErrors.get(i);
+      e.colorMode(HSB, 360, 100, 100);
+      setHSVProbeColor(e, l.z, hueFactor);
+      e.resetMatrix();
+      e.translate((float)l.x, (float)l.y, (float)(l.z * zMultiplier));
+    }
+  }
+
+  PShape buildHSVProbePoints(ArrayList<Location> heightErrors) {
+    double maxE = getMaxError(heightErrors);
+    double minE = getMinError(heightErrors);
+    double hueFactor = 120 / Math.max(Math.max(Math.abs(maxE), Math.abs(minE)), 0.1);
+
+    //println("l.z="+l.z+"   hueFactor="+hueFactor);
+    PShape group = createShape(GROUP);
     for (Location l : heightErrors) {
-      PShape s = createShape(ELLIPSE, (float)l.x, (float)l.y, 10, 10);
-      s.translate(0, 0, (float)(l.z * zMultiplier));
+      PShape s = createShape(ELLIPSE, 0, 0, 10, 10);
+      s.colorMode(HSB, 360, 100, 100);
       setHSVProbeColor(s, l.z, hueFactor);
+      s.translate((float)l.x, (float)l.y, (float)(l.z * zMultiplier));
       group.addChild(s);
     }
     //group.colorMode(RGB);
@@ -1507,10 +1571,10 @@ class DeltaConfig {
     
     return group;
   }
-
+  
   void drawHSVProbePoints(ArrayList<Location> heightErrors) {
-    //shape(probePointGroupShape);
-    
+    shape(probePointGroupShape);
+    /*
     colorMode(HSB, 360, 100, 100);
     double maxE = getMaxError(heightErrors);
     double minE = getMinError(heightErrors);
@@ -1524,48 +1588,29 @@ class DeltaConfig {
     }
     colorMode(RGB);
     stroke(0);
+    */
   }
 
   PShape buildTensors(ArrayList<Location> heightErrors, ArrayList<Location> effectorErrors) {
-    PShape group = createShape(GROUP);
+    PShape shape = createShape();
+    shape.beginShape(LINES);
     
     for (int i = 0; i < heightErrors.size(); i++) {
       Location h = heightErrors.get(i);
       Location e = effectorErrors.get(i);
-      PShape tensor = createShape();
-      tensor.beginShape();
-      tensor.stroke(0);
-      tensor.vertex((float)h.x, (float)h.y, (float)(h.z * zMultiplier));
-      tensor.vertex((float)(h.x + (tensorMultiplier * e.x)), (float)(h.y + (tensorMultiplier * e.y)), (float)(h.z * zMultiplier + (tensorMultiplier * e.z)));
-      tensor.endShape();
-      group.addChild(tensor);
+      shape.vertex((float)h.x, (float)h.y, (float)(h.z * zMultiplier));
+      shape.vertex((float)(h.x + (tensorMultiplier * e.x)), (float)(h.y + (tensorMultiplier * e.y)), (float)(h.z * zMultiplier + (tensorMultiplier * e.z)));
     }
+    shape.endShape();
     
-    return group;
+    return shape;
   }
 
-  void drawTensors(ArrayList<Location> heightErrors, ArrayList<Location> effectorErrors) {
+  void drawTensors() {
     colorMode(RGB);
     noFill();
     stroke(0);
-      beginShape(LINES);
-    for (int i = 0; i < heightErrors.size(); i++) {
-      Location h = heightErrors.get(i);
-      Location e = effectorErrors.get(i);
-      double z1 = h.z * zMultiplier;
-      double x2 = h.x + (e.x * tensorMultiplier);
-      double y2 = h.y + (e.y * tensorMultiplier);
-      double z2 = (h.z * zMultiplier) + (e.z * tensorMultiplier);
-/*      
-      printLocation("Effector:", h); 
-      printLocation("Tensor:", e); 
-      println("["+h.x+","+h.y+","+z1+"] -> ["+x2+","+y2+","+z2+"]");
-  */    
-      vertex((float)h.x, (float)h.y, (float)(z1));
-      vertex((float)(x2), (float)(y2), (float)(z2));
-    }
-      endShape();
-      //line((float)h.x, (float)h.y, (float)x2, (float)y2);
+    shape(tensorsShape);
     fill(0);
     stroke(0);
   }
@@ -1680,7 +1725,7 @@ class DeltaConfig {
     scale(1, -1, 1);
     drawBed();
     if ((viewMode & 0x01) == 0x01) drawHSVProbePoints(heightErrors);
-    if (viewMode > 1) drawTensors(heightErrors, effectorErrors);
+    if (viewMode > 1) drawTensors();
     drawTower(this.aTowerLocation, this.aTowerHeight, this.aTowerAngle, (selectedTower == 0));
     drawTower(this.bTowerLocation, this.bTowerHeight, this.bTowerAngle, (selectedTower == 1));
     drawTower(this.cTowerLocation, this.cTowerHeight, this.cTowerAngle, (selectedTower == 2));

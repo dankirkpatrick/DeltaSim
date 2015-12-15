@@ -14,42 +14,6 @@
  * =========================================================
  */
 
-void setAllText() {
-    towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
-    towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
-    towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
-    towerAXLocTF.setText(nf((float)actual.aTowerLocation.x, 1, 5));
-    towerBXLocTF.setText(nf((float)actual.bTowerLocation.x, 1, 5));
-    towerCXLocTF.setText(nf((float)actual.cTowerLocation.x, 1, 5));
-    towerAYLocTF.setText(nf((float)actual.aTowerLocation.y, 1, 5));
-    towerBYLocTF.setText(nf((float)actual.bTowerLocation.y, 1, 5));
-    towerCYLocTF.setText(nf((float)actual.cTowerLocation.y, 1, 5));
-    endstopAOffsetTF.setText(nf((float)actual.aEndstopOffset, 1, 5));
-    endstopBOffsetTF.setText(nf((float)actual.bEndstopOffset, 1, 5));
-    endstopCOffsetTF.setText(nf((float)actual.cEndstopOffset, 1, 5));
-    deltaRadiusTF.setText(nf((float)actual.deltaRadius, 1, 5));
-    rodLengthTF.setText(nf((float)actual.rodLength, 1, 5));
-    zMultiplierTF.setText(nf((float)zMultiplier, 1, 5));
-    effectorXLocTF.setText(nf((float)actual.effectorLocation.x, 1, 5));
-    effectorYLocTF.setText(nf((float)actual.effectorLocation.y, 1, 5));
-    effectorZLocTF.setText(nf((float)actual.effectorLocation.z, 1, 5));
-    motorALocTF.setText(nf((float)actual.motorsLocation.x, 1, 5));
-    motorBLocTF.setText(nf((float)actual.motorsLocation.y, 1, 5));
-    motorCLocTF.setText(nf((float)actual.motorsLocation.z, 1, 5));
-    bedNormalATF.setText(nf((float)actual.bedNormal.a, 1, 5));
-    bedNormalBTF.setText(nf((float)actual.bedNormal.b, 1, 5));
-    bedNormalCTF.setText(nf((float)actual.bedNormal.c, 1, 5));
-    bedNormalDTF.setText(nf((float)actual.bedNormal.d, 1, 5));
-    errorXAvgValue.setText(nf((float)errorXAvg, 1, 5));
-    errorXStdDevValue.setText(nf((float)errorXStdDev, 1, 5));
-    errorYAvgValue.setText(nf((float)errorYAvg, 1, 5));
-    errorYStdDevValue.setText(nf((float)errorYStdDev, 1, 5));
-    errorZAvgValue.setText(nf((float)errorZAvg, 1, 5));
-    errorZStdDevValue.setText(nf((float)errorZStdDev, 1, 5));
-    errorHeightAvgValue.setText(nf((float)errorHeightAvg, 1, 5));
-    errorHeightStdDevValue.setText(nf((float)errorHeightStdDev, 1, 5));
-}
-
 synchronized public void paramsDraw(PApplet appc, GWinData data) { //_CODE_:paramsWindow:242215:
   appc.background(230);
 } //_CODE_:paramsWindow:242215:
@@ -153,6 +117,27 @@ public void bedNormalDChange(GTextField source, GEvent event) { //_CODE_:bedNorm
 public void zMultiplierChange(GTextField source, GEvent event) { //_CODE_:zMultiplierTF:580213:
   println("zMultiplierTF - GTextField >> GEvent." + event + " @ " + millis());
 } //_CODE_:zMultiplierTF:580213:
+
+public void tensorMultiplierChange(GTextField source, GEvent event) { //_CODE_:tensorMultiplierTF:976198:
+  println("tensorMultiplierTF - GTextField >> GEvent." + event + " @ " + millis());
+} //_CODE_:tensorMultiplierTF:976198:
+
+public void probePointsDisplayedCBClicked(GCheckbox source, GEvent event) { //_CODE_:probePointsDisplayedCB:264322:
+  int newViewMode = source.isSelected()? 1 : 0;
+  newViewMode += effectorErrorsCB.isSelected()? 2 : 0;
+  viewMode = newViewMode;
+  
+  println("probePointsDisplayedCB - GCheckbox >> GEvent." + event + " @ " + millis());
+} //_CODE_:probePointsDisplayedCB:264322:
+
+public void effectorErrorsCBClicked(GCheckbox source, GEvent event) { //_CODE_:effectorErrorsCB:780633:
+  int newViewMode = probePointsDisplayedCB.isSelected()? 1 : 0;
+  newViewMode += source.isSelected()? 2 : 0;
+  viewMode = newViewMode;
+  redrawDelta = true;
+  
+  println("effectorErrorsCB - GCheckbox >> GEvent." + event + " @ " + millis());
+} //_CODE_:effectorErrorsCB:780633:
 
 
 
@@ -376,6 +361,27 @@ public void createGUI(){
   errorHeightStdDevValue = new GLabel(paramsWindow, 360, 410, 80, 20);
   errorHeightStdDevValue.setText("0.0");
   errorHeightStdDevValue.setOpaque(false);
+  tensorMultiplierLabel = new GLabel(paramsWindow, 220, 175, 120, 20);
+  tensorMultiplierLabel.setText("Tensor Multipler");
+  tensorMultiplierLabel.setTextBold();
+  tensorMultiplierLabel.setOpaque(false);
+  tensorMultiplierTF = new GTextField(paramsWindow, 340, 170, 120, 30, G4P.SCROLLBARS_NONE);
+  tensorMultiplierTF.setOpaque(true);
+  tensorMultiplierTF.addEventHandler(this, "tensorMultiplierChange");
+  probePointsDisplayedCB = new GCheckbox(paramsWindow, 470, 145, 120, 20);
+  probePointsDisplayedCB.setTextAlign(GAlign.LEFT, GAlign.MIDDLE);
+  probePointsDisplayedCB.setText("Height Errors");
+  probePointsDisplayedCB.setTextBold();
+  probePointsDisplayedCB.setOpaque(false);
+  probePointsDisplayedCB.addEventHandler(this, "probePointsDisplayedCBClicked");
+  probePointsDisplayedCB.setSelected(true);
+  effectorErrorsCB = new GCheckbox(paramsWindow, 470, 175, 120, 20);
+  effectorErrorsCB.setTextAlign(GAlign.LEFT, GAlign.MIDDLE);
+  effectorErrorsCB.setText("Effector Errors");
+  effectorErrorsCB.setTextBold();
+  effectorErrorsCB.setOpaque(false);
+  effectorErrorsCB.addEventHandler(this, "effectorErrorsCBClicked");
+  effectorErrorsCB.setSelected(true);
 }
 
 // Variable declarations 
@@ -442,3 +448,7 @@ GLabel errorXStdDevValue;
 GLabel errorYStdDevValue; 
 GLabel errorZStdDevValue; 
 GLabel errorHeightStdDevValue; 
+GLabel tensorMultiplierLabel; 
+GTextField tensorMultiplierTF; 
+GCheckbox probePointsDisplayedCB; 
+GCheckbox effectorErrorsCB; 
