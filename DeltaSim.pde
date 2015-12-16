@@ -117,7 +117,7 @@ void draw() {
   if (redrawDelta) {
     redrawDelta = false;
     background(200);
-    actual.drawDelta(heightErrors, effectorErrors);
+    actual.drawDelta();
   }
 }
 
@@ -306,6 +306,20 @@ void keyPressed() {
 }
 
 void setAllText() {
+  configuredAAngleTF.setText(nf(degrees((float)(theoretical.aTowerAngle)), 1, 5));
+  configuredBAngleTF.setText(nf(degrees((float)(theoretical.bTowerAngle)), 1, 5));
+  configuredCAngleTF.setText(nf(degrees((float)(theoretical.cTowerAngle)), 1, 5));
+  configuredAXLocTF.setText(nf(degrees((float)(theoretical.aTowerLocation.x)), 1, 5));
+  configuredBXLocTF.setText(nf(degrees((float)(theoretical.bTowerLocation.x)), 1, 5));
+  configuredCXLocTF.setText(nf(degrees((float)(theoretical.cTowerLocation.x)), 1, 5));
+  configuredAYLocTF.setText(nf(degrees((float)(theoretical.aTowerLocation.y)), 1, 5));
+  configuredBYLocTF.setText(nf(degrees((float)(theoretical.bTowerLocation.y)), 1, 5));
+  configuredCYLocTF.setText(nf(degrees((float)(theoretical.cTowerLocation.y)), 1, 5));
+  configuredAEndstopOffsetTF.setText(nf(degrees((float)theoretical.aEndstopOffset), 1, 5));
+  configuredBEndstopOffsetTF.setText(nf(degrees((float)theoretical.bEndstopOffset), 1, 5));
+  configuredCEndstopOffsetTF.setText(nf(degrees((float)theoretical.cEndstopOffset), 1, 5));
+  configuredDeltaRadiusTF.setText(nf(degrees((float)theoretical.deltaRadius), 1, 5));
+  configuredRodLengthTF.setText(nf(degrees((float)theoretical.rodLength), 1, 5));
   towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
   towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
   towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
@@ -1608,23 +1622,8 @@ class DeltaConfig {
     return group;
   }
   
-  void drawHSVProbePoints(ArrayList<Location> heightErrors) {
+  void drawHSVProbePoints() {
     shape(probePointGroupShape);
-    /*
-    colorMode(HSB, 360, 100, 100);
-    double maxE = getMaxError(heightErrors);
-    double minE = getMinError(heightErrors);
-    double hueFactor = 120 / Math.max(Math.max(Math.abs(maxE), Math.abs(minE)), 0.1);
-    for (Location l : heightErrors) {
-      pushMatrix();
-      translate(0, 0, (float)(l.z * zMultiplier));
-      setHSVProbeColor(l.z, hueFactor);
-      ellipse((float)l.x, (float)l.y, 10, 10);
-      popMatrix();
-    }
-    colorMode(RGB);
-    stroke(0);
-    */
   }
 
   PShape buildTensors(ArrayList<Location> heightErrors, ArrayList<Location> effectorErrors) {
@@ -1751,7 +1750,7 @@ class DeltaConfig {
     app.text(String.format("Bed Normal: [%.5f, %.5f, %.5f, %.5f]", this.bedNormal.a, this.bedNormal.b, this.bedNormal.c, this.bedNormal.d), 25, 550);
   }
 
-  void drawDelta(ArrayList<Location> heightErrors, ArrayList<Location> effectorErrors) {
+  void drawDelta() {
     pushMatrix();
 
     translate(width/2, 2*height/3, -50);
@@ -1760,7 +1759,7 @@ class DeltaConfig {
 
     scale(1, -1, 1);
     drawBed();
-    if ((viewMode & 0x01) == 0x01) drawHSVProbePoints(heightErrors);
+    if ((viewMode & 0x01) == 0x01) drawHSVProbePoints();
     if (viewMode > 1) drawTensors();
     drawTower(this.aTowerLocation, this.aTowerHeight, this.aTowerAngle, (selectedTower == 0));
     drawTower(this.bTowerLocation, this.bTowerHeight, this.bTowerAngle, (selectedTower == 1));
@@ -1940,14 +1939,6 @@ class Point {
     this.y = y;
     this.z = z;
   }
-}
-
-float[] CalcTowerOffsets(float[] position) {
-  return null;
-}
-
-float ProbeHeight(float[] towerOffsets) {
-  return 0;
 }
 
 void printLocation(String title, Location location) {
