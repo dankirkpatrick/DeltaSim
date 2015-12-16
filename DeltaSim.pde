@@ -1403,6 +1403,7 @@ class DavidCrockerCalibration {
         break;
       }
     }
+    config.CalculateFromAngles();
   }
 }
 
