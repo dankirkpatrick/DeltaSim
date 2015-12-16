@@ -1,4 +1,4 @@
-import g4p_controls.*; //<>// //<>// //<>//
+import g4p_controls.*; //<>// //<>// //<>// //<>//
 
 DeltaConfig theoretical;
 DeltaConfig actual;
@@ -66,12 +66,12 @@ ArrayList<Location> readCSV(String filename) {
   return results;
 }
 
-void calibrateForMark(String filename) {
+void calibrateForMark(String filename, int numFactors) {
   DeltaConfig markConfig = new DeltaConfig();
   ArrayList<Location> samplePoints = readCSV(filename);
   DavidCrockerCalibration calib = new DavidCrockerCalibration();
   markConfig.debug("BEFORE");
-  calib.doDeltaCalibration(markConfig, 6, samplePoints);
+  calib.doDeltaCalibration(markConfig, numFactors, samplePoints);
   markConfig.debug("AFTER");
 }
 
@@ -246,9 +246,21 @@ void keyPressed() {
     viewMode = (viewMode + 1) % 4;
     probePointsDisplayedCB.setSelected((viewMode % 2)==1);
     effectorErrorsCB.setSelected(viewMode > 1);
-  } else if (key == 'p') {
+  } else if (key == '#') {
+    // Do z-probe calibration
+    davidCrockerCalibration.doDeltaCalibration(theoretical, 3, testPoints);
+    calculateErrors();
+  } else if (key == '$') {
+    // Do z-probe calibration
+    davidCrockerCalibration.doDeltaCalibration(theoretical, 4, testPoints);
+    calculateErrors();
+  } else if (key == '^') {
     // Do z-probe calibration
     davidCrockerCalibration.doDeltaCalibration(theoretical, 6, testPoints);
+    calculateErrors();
+  } else if (key == '&') {
+    // Do z-probe calibration
+    davidCrockerCalibration.doDeltaCalibration(theoretical, 7, testPoints);
     calculateErrors();
   } else if (key == CODED) {
     Location loc;
@@ -287,7 +299,7 @@ void keyPressed() {
         loc.x -= 0.1;
       } else {
         actual.deltaRadius -= 0.1;
-        actual.CalculateFromAngles(); //<>//
+        actual.CalculateFromAngles(); //<>// //<>//
       }
     } else if (keyCode == RIGHT) {
       handled = true;
@@ -309,17 +321,17 @@ void setAllText() {
   configuredAAngleTF.setText(nf(degrees((float)(theoretical.aTowerAngle)), 1, 5));
   configuredBAngleTF.setText(nf(degrees((float)(theoretical.bTowerAngle)), 1, 5));
   configuredCAngleTF.setText(nf(degrees((float)(theoretical.cTowerAngle)), 1, 5));
-  configuredAXLocTF.setText(nf(degrees((float)(theoretical.aTowerLocation.x)), 1, 5));
-  configuredBXLocTF.setText(nf(degrees((float)(theoretical.bTowerLocation.x)), 1, 5));
-  configuredCXLocTF.setText(nf(degrees((float)(theoretical.cTowerLocation.x)), 1, 5));
-  configuredAYLocTF.setText(nf(degrees((float)(theoretical.aTowerLocation.y)), 1, 5));
-  configuredBYLocTF.setText(nf(degrees((float)(theoretical.bTowerLocation.y)), 1, 5));
-  configuredCYLocTF.setText(nf(degrees((float)(theoretical.cTowerLocation.y)), 1, 5));
-  configuredAEndstopOffsetTF.setText(nf(degrees((float)theoretical.aEndstopOffset), 1, 5));
-  configuredBEndstopOffsetTF.setText(nf(degrees((float)theoretical.bEndstopOffset), 1, 5));
-  configuredCEndstopOffsetTF.setText(nf(degrees((float)theoretical.cEndstopOffset), 1, 5));
-  configuredDeltaRadiusTF.setText(nf(degrees((float)theoretical.deltaRadius), 1, 5));
-  configuredRodLengthTF.setText(nf(degrees((float)theoretical.rodLength), 1, 5));
+  configuredAXLocTF.setText(nf((float)theoretical.aTowerLocation.x, 1, 5));
+  configuredBXLocTF.setText(nf((float)theoretical.bTowerLocation.x, 1, 5));
+  configuredCXLocTF.setText(nf((float)theoretical.cTowerLocation.x, 1, 5));
+  configuredAYLocTF.setText(nf((float)theoretical.aTowerLocation.y, 1, 5));
+  configuredBYLocTF.setText(nf((float)theoretical.bTowerLocation.y, 1, 5));
+  configuredCYLocTF.setText(nf((float)theoretical.cTowerLocation.y, 1, 5));
+  configuredAEndstopOffsetTF.setText(nf((float)theoretical.aEndstopOffset, 1, 5)); //<>//
+  configuredBEndstopOffsetTF.setText(nf((float)theoretical.bEndstopOffset, 1, 5));
+  configuredCEndstopOffsetTF.setText(nf((float)theoretical.cEndstopOffset, 1, 5));
+  configuredDeltaRadiusTF.setText(nf((float)theoretical.deltaRadius, 1, 5));
+  configuredRodLengthTF.setText(nf((float)theoretical.rodLength, 1, 5));
   towerAAngleTF.setText(nf(degrees((float)(actual.aTowerAngle)), 1, 5));
   towerBAngleTF.setText(nf(degrees((float)(actual.bTowerAngle)), 1, 5));
   towerCAngleTF.setText(nf(degrees((float)(actual.cTowerAngle)), 1, 5));
@@ -513,7 +525,7 @@ void calculateErrors() {
 class Location { //<>//
   double x;
   double y;
-  double z;
+  double z; //<>//
 
   Location() {
     this(0, 0, 0);
@@ -1342,9 +1354,9 @@ class DavidCrockerCalibration {
       for (int i = 0; i < numPoints; i++) {
         Location te = samplePoints.get(i);
         Location tm = motorTestHeights.get(i);
-        motors.x = tm.x + solution.data[0];
-        motors.y = tm.y + solution.data[1];
-        motors.z = tm.z + solution.data[2];
+        motors.x = tm.x + solution.data[0];// + config.aEndstopOffset;
+        motors.y = tm.y + solution.data[1];// + config.bEndstopOffset;
+        motors.z = tm.z + solution.data[2];// + config.cEndstopOffset;
         theoretical.transform.inverseTransform(motors, effector);
         corrections[i] = effector.z;
         expectedResiduals.data[i] = te.z + effector.z;
