@@ -1308,6 +1308,7 @@ class DavidCrockerCalibration {
     FixedVector solution = new FixedVector(numDeltaFactors);
     FixedVector residuals = new FixedVector(numPoints);
     FixedVector expectedResiduals = new FixedVector(numPoints);
+    Location m = new Location();
     do {
       iteration++;
       println("David Crocker Calibration: iteration " + iteration);
@@ -1354,9 +1355,9 @@ class DavidCrockerCalibration {
       for (int i = 0; i < numPoints; i++) {
         Location te = samplePoints.get(i);
         Location tm = motorTestHeights.get(i);
-        motors.x = tm.x + solution.data[0];// + config.aEndstopOffset;
-        motors.y = tm.y + solution.data[1];// + config.bEndstopOffset;
-        motors.z = tm.z + solution.data[2];// + config.cEndstopOffset;
+        motors.x = tm.x + config.aEndstopOffset;
+        motors.y = tm.y + config.bEndstopOffset;
+        motors.z = tm.z + config.cEndstopOffset;
         theoretical.transform.inverseTransform(motors, effector);
         corrections[i] = effector.z;
         expectedResiduals.data[i] = te.z + effector.z;
